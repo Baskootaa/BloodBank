@@ -16,6 +16,9 @@ const AdminLogin = ({ setIsAuth, isAuth }) => {
     // مسح أي توكن قديم لتجنب التداخل
     localStorage.removeItem('token');
     localStorage.removeItem('isLogged');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('user_email');
 
     try {
       // ✅ استخدام api.post مباشرة وبمسار نسبي فقط دون الحاجة لكتابة الدومين
@@ -40,15 +43,15 @@ const AdminLogin = ({ setIsAuth, isAuth }) => {
             const fullName = userData.name || (userData.first_name + ' ' + userData.last_name);
             localStorage.setItem('user_name', fullName);
             localStorage.setItem('user_email', userData.email);
-            localStorage.setItem('user_role', userData.role);
+            localStorage.setItem('user_role', userData.role); // ✅ حفظ الدور بوضوح
 
             setIsAuth(true);
             
             Swal.fire({
               icon: 'success',
               title: `مرحباً ${fullName}`,
-              text: userData.role === 'admin' 
-                ? 'جاري فتح لوحة التحكم للـ Admin...' 
+              text: userData.role === 'admin' || userData.role === 'employee'
+                ? 'جاري فتح لوحة التحكم...' 
                 : 'تم تسجيل الدخول بنجاح، جاري التحويل...',
               timer: 1500,
               showConfirmButton: false,
@@ -56,7 +59,8 @@ const AdminLogin = ({ setIsAuth, isAuth }) => {
             });
           }
           
-          if (userData?.role === 'admin') {
+          // ✅ تعديل منطق التوجيه ليشمل الأدمن والموظف (employee) لداخل لوحة التحكم أو حسب رغبتك
+          if (userData?.role === 'admin' || userData?.role === 'employee') {
             navigate('/dashboard');
           } else {
             navigate('/');

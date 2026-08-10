@@ -65,13 +65,14 @@ Route::get('/fix-admin', function () {
         [
             'name' => 'Baskota',
             'password' => Hash::make('12345678'),
-            'is_admin' => 1
+            'is_admin' => 1,
+            'role' => 'admin' // لضمان التطابق مع فحص الـ role الجديد
         ]
     );
     return response()->json(['message' => 'Admin account verified as Baskota!', 'user' => $user]);
 });
 
-// --- 7. المسارات المحمية (Sanctum) - تعديل الملف الشخصي ---
+// --- 7. المسارات المحمية (Sanctum) - الملف الشخصي وإدارة الأدمن ---
 Route::middleware('auth:sanctum')->group(function () {
     
     // جلب بيانات المستخدم الحالي
@@ -81,6 +82,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::get('/admin/me', [AuthController::class, 'profile']); 
+
+    // 👑 مسارات الأدمن لإدارة وتعديل المستخدمين والصلاحيات
+    Route::get('/admin/users', [AuthController::class, 'index']);
+    Route::put('/admin/users/{id}', [AuthController::class, 'updateUser']);
 
     // تحديث كلمة المرور
     Route::post('/admin/update-password', function (Request $request) {

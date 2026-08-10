@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import { FaTint, FaCheckCircle, FaHospital, FaBox } from 'react-icons/fa';
 import api from '../api/axios'; // ✅ استبدال axios بالمحرك المركزي
 
-const Register = ({ cities = [] }) => {
+const Register = () => {
   const navigate = useNavigate();
   
   const [name, setName] = useState('');
@@ -14,8 +14,23 @@ const Register = ({ cities = [] }) => {
   const [bagsQuantity, setBagsQuantity] = useState(1);
   const [phone, setPhone] = useState('');
   const [age, setAge] = useState('');
+  const [cities, setCities] = useState([]);
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [hospitalsLoading, setHospitalsLoading] = useState(false);
+
+  // جلب المدن عند تحميل المكون لضمان ظهورها دائماً
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        const response = await api.get('/cities');
+        setCities(response.data);
+      } catch (error) {
+        console.error("خطأ في جلب المدن:", error);
+      }
+    };
+    fetchCities();
+  }, []);
 
   // جلب المستشفيات بناءً على المدينة المختارة فقط
   useEffect(() => {
@@ -25,16 +40,15 @@ const Register = ({ cities = [] }) => {
         return;
       }
       
-      setLoading(true);
+      setHospitalsLoading(true);
       try {
-        // ✅ استخدام api بدلاً من axios والمقابلة النسبية
         const response = await api.get(`/hospitals?city_id=${cityId}`);
         setHospitals(response.data);
       } catch (error) {
         console.error("خطأ في جلب المستشفيات:", error);
         Swal.fire('خطأ', 'فشل في تحميل قائمة المستشفيات', 'error');
       } finally {
-        setLoading(false);
+        setHospitalsLoading(false);
       }
     };
 
@@ -58,7 +72,6 @@ const Register = ({ cities = [] }) => {
     };
 
     try {
-      // ✅ إرسال البيانات عبر api مع الاعتماد على Interceptors في التوكن
       const response = await api.post('/donors', donorData);
 
       if (response.status === 201 || response.status === 200) {
@@ -146,8 +159,8 @@ const Register = ({ cities = [] }) => {
             {/* المستشفى */}
             <div className="space-y-1">
               <label className="text-xs font-black text-slate-500 mr-2 flex items-center gap-1"><FaHospital className="text-[#f40051]"/> المستشفى</label>
-              <select required disabled={!cityId || loading} className="w-full p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-[#f40051] focus:bg-white outline-none font-bold text-right transition-all disabled:opacity-50" value={hospitalId} onChange={(e) => setHospitalId(e.target.value)}>
-                <option value="">{loading ? 'جارِ التحميل...' : 'اختر المستشفى'}</option>
+              <select required disabled={!cityId || hospitalsLoading} className="w-full p-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-[#f40051] focus:bg-white outline-none font-bold text-right transition-all disabled:opacity-50" value={hospitalId} onChange={(e) => setHospitalId(e.target.value)}>
+                <option value="">{hospitalsLoading ? 'جارِ التحميل...' : 'اختر المستشفى'}</option>
                 {hospitals.map(h => (
                   <option key={h.id} value={h.id}>{h.name}</option>
                 ))}

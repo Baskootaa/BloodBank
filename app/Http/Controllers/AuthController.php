@@ -13,21 +13,19 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        // تم إضافة الحقول الجديدة في عملية التحقق (Validation)
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
             'password' => 'required|string|min:8',
-            'age' => 'nullable|integer', // حقل العمر
-            'phone' => 'nullable|string', // حقل التليفون
-            'blood_type' => 'nullable|string', // حقل فصيلة الدم
+            'age' => 'nullable|integer',
+            'phone' => 'nullable|string',
+            'blood_type' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        // تم إضافة الحقول الجديدة في الـ Create لتخزينها في الداتابيز
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -35,7 +33,7 @@ class AuthController extends Controller
             'age' => $request->age,
             'phone' => $request->phone,
             'blood_type' => $request->blood_type,
-            'role' => 'user', 
+            'role' => 'user', // ✅ أي مستخدم جديد يبدأ كـ user تلقائياً
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -76,7 +74,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
-                'age' => $user->age,       // إرسال البيانات الإضافية عند اللوج إن
+                'age' => $user->age,
                 'phone' => $user->phone,
                 'blood_type' => $user->blood_type
             ]
@@ -121,6 +119,64 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'تم تحديث الملف الشخصي بنجاح',
             'user' => $user
+        ], 200);
+    }
+
+    // ==========================================
+    // 👑 دوال الأدمن الإضافية لإدارة المستخدمين
+    // ==========================================
+
+    // 1. جلب كل المستخدمين لعرضهم في القائمة المنسدلة للأدمن
+    public function index(Request $request)
+    {
+        // التأكد أن المستخدم الحالي هو Admin (يمكن حمايتها بMiddleware أيضاً)
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'غير مصرح لك بالوصول'], 403);
+        }
+
+        $users = User::select('id', 'name', 'email', 'phone', 'role', 'age', 'blood_type')->get();
+        return response()->json($users, 200);
+    }
+
+    // 2. تحديث بيانات وصلاحية أي مستخدم بواسطة الأدمن
+    public function updateUser(Request $request, $id)
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'غير مصرح لك بالقيام بهذا الإجراء'], 403);
+        }
+
+        $targetUser = User::find($id);
+
+        if (!$targetUser) {
+            return response()->json(['message' => 'المستخدم غير موجود'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|unique:users,email,' . $id,
+            'phone' => 'nullable|string',
+            'role' => 'sometimes|in:user,employee,admin', // القيم المسموحة للصلاحيات
+            'new_password' => 'nullable|string|min:8',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        if ($request->has('name')) $targetUser->name = $request->name;
+        if ($request->has('email')) $targetUser->email = $request->email;
+        if ($request->has('phone')) $targetUser->phone = $request->phone;
+        if ($request->has('role')) $targetUser->role = $request->role;
+        
+        if ($request->filled('new_password')) {
+            $targetUser->password = Hash::make($request->new_password);
+        }
+
+        $targetUser->save();
+
+        return response()->json([
+            'message' => 'تم تحديث بيانات المستخدم وصلاحيته بنجاح',
+            'user' => $targetUser
         ], 200);
     }
 
