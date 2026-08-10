@@ -9,13 +9,13 @@ const ProtectedRoute = ({ children, allowAllUsers = false }) => {
     return <Navigate to="/admin-login" replace />;
   }
 
-  // 2. إذا كانت الصفحة مخصصة للأدمن فقط (وهي الحالة الافتراضية) 
-  // والمستخدم الحالي ليس أدمن، حوله للصفحة الرئيسية
-  if (!allowAllUsers && userRole !== 'admin') {
+  // 2. إذا كانت الصفحة مخصصة للأدمن فقط، نسمح بالدخول لو كان الأدمن أو الموظف، أو لو الـ role مش متسجل بس هو مسجل كأدمن رئيسي
+  // (هنا بنسمح لو الـ role هو admin أو employee، أو لو الـ userRole مش موجود أصلاً للتوافق مع الجلسات القديمة)
+  if (!allowAllUsers && userRole && userRole !== 'admin' && userRole !== 'employee') {
     return <Navigate to="/home" replace />;
   }
 
-  // 3. إذا كان مسجل دخول (سواء أدمن أو يوزر عادي في الصفحات المسموحة)، اعرض المحتوى
+  // 3. إذا كان مسجل دخول ومطابق للشروط، اعرض المحتوى
   return children;
 };
 
