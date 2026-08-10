@@ -8,6 +8,9 @@ const Profile = () => {
   const [usersList, setUsersList] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
   
+  // التحقق مما إذا كان المستخدم الحالي هو الأدمن
+  const isAdmin = localStorage.getItem('isLogged') === 'true';
+  
   // بيانات المستخدم المحدد للتعديل
   const [editFormData, setEditFormData] = useState({
     name: '',
@@ -30,6 +33,7 @@ const Profile = () => {
 
   // 1. جلب قائمة كل المستخدمين للأدمن
   const fetchUsers = async () => {
+    if (!isAdmin) return; // جلب المستخدمين فقط إذا كان أدمن
     try {
       const response = await api.get('/admin/users');
       setUsersList(response.data);
@@ -40,7 +44,7 @@ const Profile = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [isAdmin]);
 
   // 2. عندما يختار الأدمن مستخدم من القائمة المنسدلة
   const handleUserSelect = (e) => {
@@ -182,113 +186,115 @@ const Profile = () => {
         <FaUserShield className="text-[#f40051]" /> إعدادات النظام والبروفايل
       </h2>
 
-      {/* قسم تعديل الحسابات والصلاحيات (لأدمن النظام) */}
-      <div className="bg-white p-8 rounded-[3rem] border shadow-sm mb-10">
-        <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-          <FaUsers className="text-[#f40051]" /> تعديل الحسابات وصلاحيات المستخدمين (البروفايل)
-        </h3>
+      {/* قسم تعديل الحسابات والصلاحيات (يظهر للأدمن فقط) */}
+      {isAdmin && (
+        <div className="bg-white p-8 rounded-[3rem] border shadow-sm mb-10">
+          <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+            <FaUsers className="text-[#f40051]" /> تعديل الحسابات وصلاحيات المستخدمين (البروفايل)
+          </h3>
 
-        <div className="mb-6">
-          <label className="block text-xs font-black text-slate-400 mb-2 uppercase">اختر المستخدم للتعديل على بياناته أو صلاحيته أو حذفه:</label>
-          <select 
-            className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all font-bold text-slate-700"
-            value={selectedUserId}
-            onChange={handleUserSelect}
-          >
-            <option value="">-- اختر مستخدم من القائمة --</option>
-            {usersList.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name} ({u.email}) - [{u.role}]
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="mb-6">
+            <label className="block text-xs font-black text-slate-400 mb-2 uppercase">اختر المستخدم للتعديل على بياناته أو صلاحيته أو حذفه:</label>
+            <select 
+              className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all font-bold text-slate-700"
+              value={selectedUserId}
+              onChange={handleUserSelect}
+            >
+              <option value="">-- اختر مستخدم من القائمة --</option>
+              {usersList.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} ({u.email}) - [{u.role}]
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {selectedUserId && (
-          <form onSubmit={handleUpdateUserSubmit} className="space-y-6 pt-4 border-t border-slate-100">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 mr-2 uppercase">الاسم بالكامل</label>
-                <input 
-                  type="text" 
-                  required
-                  className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all font-bold"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
-                />
+          {selectedUserId && (
+            <form onSubmit={handleUpdateUserSubmit} className="space-y-6 pt-4 border-t border-slate-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 mr-2 uppercase">الاسم بالكامل</label>
+                  <input 
+                    type="text" 
+                    required
+                    className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all font-bold"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 mr-2 uppercase">البريد الإلكتروني</label>
+                  <input 
+                    type="email" 
+                    required
+                    className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all text-left font-sans font-bold"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 mr-2 uppercase">رقم المحمول (الهاتف)</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all text-left font-sans font-bold"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({...editFormData, phone: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 mr-2 uppercase">الصفة / المسمى (Role)</label>
+                  <select 
+                    className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all font-black text-[#f40051]"
+                    value={editFormData.role}
+                    onChange={(e) => setEditFormData({...editFormData, role: e.target.value})}
+                  >
+                    <option value="user">مستخدم عادي (User)</option>
+                    <option value="employee">موظف (Employee)</option>
+                    <option value="admin">مدير النظام (Admin)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 mr-2 uppercase">البريد الإلكتروني</label>
+                <label className="text-xs font-black text-slate-400 mr-2 uppercase">كلمة المرور الجديدة (اتركها فارغة إذا لم ترد التغيير)</label>
                 <input 
-                  type="email" 
-                  required
-                  className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all text-left font-sans font-bold"
-                  value={editFormData.email}
-                  onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 mr-2 uppercase">رقم المحمول (الهاتف)</label>
-                <input 
-                  type="text" 
-                  className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all text-left font-sans font-bold"
-                  value={editFormData.phone}
-                  onChange={(e) => setEditFormData({...editFormData, phone: e.target.value})}
+                  type="password" 
+                  placeholder="••••••••"
+                  className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all text-left font-sans"
+                  value={editFormData.new_password}
+                  onChange={(e) => setEditFormData({...editFormData, new_password: e.target.value})}
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 mr-2 uppercase">الصفة / المسمى (Role)</label>
-                <select 
-                  className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all font-black text-[#f40051]"
-                  value={editFormData.role}
-                  onChange={(e) => setEditFormData({...editFormData, role: e.target.value})}
+              <div className="flex flex-col md:flex-row gap-4">
+                <button 
+                  type="submit"
+                  disabled={savingUser}
+                  className={`flex items-center justify-center gap-3 bg-[#f40051] text-white px-10 py-4 rounded-2xl font-black transition-all shadow-lg active:scale-95 w-full md:w-auto ${savingUser ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-900'}`}
                 >
-                  <option value="user">مستخدم عادي (User)</option>
-                  <option value="employee">موظف (Employee)</option>
-                  <option value="admin">مدير النظام (Admin)</option>
-                </select>
+                  <FaSave /> {savingUser ? 'جاري الحفظ...' : 'حفظ البيانات والصلاحية'}
+                </button>
+
+                <button 
+                  type="button"
+                  onClick={handleDeleteUser}
+                  disabled={deletingUser}
+                  className={`flex items-center justify-center gap-3 bg-red-100 text-red-600 px-8 py-4 rounded-2xl font-black transition-all shadow-sm active:scale-95 w-full md:w-auto ${deletingUser ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-600 hover:text-white'}`}
+                >
+                  <FaTrash /> {deletingUser ? 'جاري الحذف...' : 'حذف هذا المستخدم'}
+                </button>
               </div>
-            </div>
+            </form>
+          )}
+        </div>
+      )}
 
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 mr-2 uppercase">كلمة المرور الجديدة (اتركها فارغة إذا لم ترد التغيير)</label>
-              <input 
-                type="password" 
-                placeholder="••••••••"
-                className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all text-left font-sans"
-                value={editFormData.new_password}
-                onChange={(e) => setEditFormData({...editFormData, new_password: e.target.value})}
-              />
-            </div>
-
-            <div className="flex flex-col md:flex-row gap-4">
-              <button 
-                type="submit"
-                disabled={savingUser}
-                className={`flex items-center justify-center gap-3 bg-[#f40051] text-white px-10 py-4 rounded-2xl font-black transition-all shadow-lg active:scale-95 w-full md:w-auto ${savingUser ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-900'}`}
-              >
-                <FaSave /> {savingUser ? 'جاري الحفظ...' : 'حفظ البيانات والصلاحية'}
-              </button>
-
-              <button 
-                type="button"
-                onClick={handleDeleteUser}
-                disabled={deletingUser}
-                className={`flex items-center justify-center gap-3 bg-red-100 text-red-600 px-8 py-4 rounded-2xl font-black transition-all shadow-sm active:scale-95 w-full md:w-auto ${deletingUser ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-600 hover:text-white'}`}
-              >
-                <FaTrash /> {deletingUser ? 'جاري الحذف...' : 'حذف هذا المستخدم'}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-
-      {/* قسم تأمين الحساب الشخصي (تغيير كلمة المرور للأدمن الحالي) */}
+      {/* قسم تأمين الحساب الشخصي (تغيير كلمة المرور للحساب الحالي) */}
       <div className="bg-white p-10 rounded-[3rem] border shadow-sm">
         <h4 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
           <FaKey className="text-blue-500" /> تغيير كلمة المرور لحسابك الشخصي

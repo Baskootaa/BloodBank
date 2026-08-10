@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom'; 
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css'; 
@@ -47,8 +47,10 @@ const LayoutWrapper = ({ children, isAuth, setIsAuth, searchTerm, setSearchTerm 
 };
 
 function App() {
-  // حالة تسجيل الدخول
-  const [isAuth, setIsAuth] = useState(() => localStorage.getItem('isLogged') === 'true');
+  // حالة تسجيل الدخول مع مزامنتها بـ localStorage (تم توحيد الاعتماد على المفتاحين لتجنب أي تضارب)
+  const [isAuth, setIsAuth] = useState(() => {
+    return localStorage.getItem('isLogged') === 'true' || localStorage.getItem('isAuth') === 'true';
+  });
   
   // حالة البحث المركزية (تربط الـ Navbar بجميع الصفحات)
   const [searchTerm, setSearchTerm] = useState('');
@@ -148,8 +150,10 @@ function App() {
     }
   };
 
+  // تحديث حالة التخزين المحلي عند تغير حالة الاعتماد (لضمان توافق Profile و ProtectedRoute معاً)
   useEffect(() => { 
-    localStorage.setItem('isLogged', isAuth ? 'true' : 'false'); 
+    localStorage.setItem('isLogged', isAuth ? 'true' : 'false');
+    localStorage.setItem('isAuth', isAuth ? 'true' : 'false');
   }, [isAuth]);
 
   return (
@@ -190,7 +194,7 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* الإعدادات: للأدمن فقط */}
+          {/* الإعدادات والبروفايل: للأدمن فقط */}
           <Route path="/settings" element={
             <ProtectedRoute>
               <Profile />
