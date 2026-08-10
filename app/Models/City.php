@@ -13,6 +13,15 @@ class City extends Model
     protected $fillable = ['name'];
 
     /**
+     * علاقة المدينة بالمستشفيات
+     * المدينة الواحدة تضم العديد من المستشفيات
+     */
+    public function hospitals(): HasMany
+    {
+        return $this->hasMany(Hospital::class);
+    }
+
+    /**
      * علاقة المدينة بالمتبرعين
      * المدينة الواحدة تضم العديد من المتبرعين
      */

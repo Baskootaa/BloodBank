@@ -129,7 +129,6 @@ class AuthController extends Controller
     // 1. جلب كل المستخدمين لعرضهم في القائمة المنسدلة للأدمن
     public function index(Request $request)
     {
-        // التأكد أن المستخدم الحالي هو Admin (يمكن حمايتها بMiddleware أيضاً)
         if ($request->user()->role !== 'admin') {
             return response()->json(['message' => 'غير مصرح لك بالوصول'], 403);
         }
@@ -155,7 +154,7 @@ class AuthController extends Controller
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|string|email|unique:users,email,' . $id,
             'phone' => 'nullable|string',
-            'role' => 'sometimes|in:user,employee,admin', // القيم المسموحة للصلاحيات
+            'role' => 'sometimes|in:user,employee,admin',
             'new_password' => 'nullable|string|min:8',
         ]);
 
@@ -177,6 +176,31 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'تم تحديث بيانات المستخدم وصلاحيته بنجاح',
             'user' => $targetUser
+        ], 200);
+    }
+
+    // 3. حذف مستخدم بواسطة الأدمن
+    public function destroy(Request $request, $id)
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'غير مصرح لك بالقيام بهذا الإجراء'], 403);
+        }
+
+        $targetUser = User::find($id);
+
+        if (!$targetUser) {
+            return response()->json(['message' => 'المستخدم غير موجود'], 404);
+        }
+
+        // منع الأدمن من حذف حسابه الشخصي بالخطأ
+        if ($request->user()->id === $targetUser->id) {
+            return response()->json(['message' => 'لا يمكنك حذف حسابك الشخصي الحالي'], 403);
+        }
+
+        $targetUser->delete();
+
+        return response()->json([
+            'message' => 'تم حذف المستخدم بنجاح'
         ], 200);
     }
 

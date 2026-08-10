@@ -14,12 +14,13 @@ return new class extends Migration
         Schema::create('hospitals', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('address');
+            $table->string('address')->nullable();
+            
+            // ربط جدول المستشفيات بجدول المدن (العلاقة المطلوبة)
             $table->foreignId('city_id')->constrained('cities')->onDelete('cascade');
             
-            // --- العمود الجديد المطلوب لإصلاح خطأ BloodStockSeeder ---
+            // عمود المخزون (إذا كان مستخدماً في الـ Seeders)
             $table->integer('stock')->default(0);
-            // ----------------------------------------------------
             
             $table->timestamps();
         });

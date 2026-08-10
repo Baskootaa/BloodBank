@@ -3,36 +3,66 @@
 namespace App\Http\Controllers;
 
 use App\Models\Hospital;
+use App\Models\City;
 use Illuminate\Http\Request;
 
 class HospitalController extends Controller
 {
     /**
-     * جلب قائمة المستشفيات مع المخزون بناءً على مسميات phpMyAdmin الحقيقية.
+     * جلب قائمة المستشفيات مع المخزون والمدينة.
      */
     public function index(Request $request)
     {
-        // نستخدم eager loading لجلب علاقة bloodStocks والمدينة
         $query = Hospital::with(['city', 'bloodStocks']);
 
         if ($request->filled('city_id')) {
             $query->where('city_id', $request->city_id);
         }
 
-        // أضفنا values() في النهاية لضمان رجوع البيانات كمصفوفة Array [] وليس Object {}
-        // عشان الـ React يقدر يعمل عليها .filter() و .map() بدون مشاكل
         $hospitals = $query->orderBy('name', 'asc')->get()->map(function ($hospital) {
-            /**
-             * ملاحظة لمازن: 
-             * في قاعدة البيانات عندك العمود اسمه bags_quantity
-             * لذلك سنقوم بجمع هذا العمود تحديداً.
-             */
             $hospital->total_bags_count = $hospital->bloodStocks->sum('bags_quantity');
-
             return $hospital;
         })->values(); 
 
         return response()->json($hospitals, 200);
+    }
+
+    /**
+     * إضافة مستشفى جديد يدوياً.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'address' => 'nullable|string|max:255',
+            'city_id' => 'required|exists:cities,id',
+            'stock' => 'nullable|integer'
+        ]);
+
+        $hospital = Hospital::create([
+            'name' => $request->name,
+            'address' => $request->address ?? 'غير محدد',
+            'city_id' => $request->city_id,
+            'stock' => $request->stock ?? 0,
+        ]);
+
+        // جلب المستشفى مع بيانات المدينة لترجيعها للفرونت إند بشكل متكامل
+        $hospital->load('city');
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'تم إضافة المستشفى بنجاح',
+            'data' => $hospital
+        ], 201);
+    }
+
+    /**
+     * جلب قائمة المدن لاستخدامها في الـ Select في الواجهة.
+     */
+    public function getCities()
+    {
+        $cities = City::orderBy('name', 'asc')->get();
+        return response()->json($cities, 200);
     }
 
     /**
@@ -49,7 +79,6 @@ class HospitalController extends Controller
             ], 404);
         }
 
-        // حساب الإجمالي باستخدام العمود الصحيح bags_quantity
         $hospital->total_bags_count = $hospital->bloodStocks->sum('bags_quantity');
 
         return response()->json($hospital, 200);
@@ -57,7 +86,6 @@ class HospitalController extends Controller
 
     /**
      * تحديث مخزون الدم لمستشفى.
-     * هنا بنستخدم bags_quantity عشان يسمع في الجدول صح
      */
     public function updateStock(Request $request, $id)
     {
@@ -68,11 +96,6 @@ class HospitalController extends Controller
 
         $hospital = Hospital::findOrFail($id);
 
-        /**
-         * تحديث أو إنشاء سجل:
-         * الـ key هو blood_type
-         * القيمة اللي بتتحدث هي bags_quantity (مطابق لجدولك في phpMyAdmin)
-         */
         $stock = $hospital->bloodStocks()->updateOrCreate(
             ['blood_type' => $request->blood_type],
             ['bags_quantity' => $request->quantity] 

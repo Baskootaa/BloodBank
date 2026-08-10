@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaUserShield, FaKey, FaEnvelope, FaUser, FaSave, FaPhone, FaUsers } from 'react-icons/fa';
+import { FaUserShield, FaKey, FaEnvelope, FaUser, FaSave, FaPhone, FaUsers, FaTrash } from 'react-icons/fa';
 import api from '../api/axios';
 import Swal from 'sweetalert2';
 
@@ -26,6 +26,7 @@ const Profile = () => {
 
   const [loading, setLoading] = useState(false);
   const [savingUser, setSavingUser] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(false);
 
   // 1. جلب قائمة كل المستخدمين للأدمن
   const fetchUsers = async () => {
@@ -72,7 +73,7 @@ const Profile = () => {
 
     setSavingUser(true);
     try {
-      const response = await api.put(`/admin/users/${selectedUserId}`, editFormData);
+      await api.put(`/admin/users/${selectedUserId}`, editFormData);
       Swal.fire({
         icon: 'success',
         title: 'تم بنجاح',
@@ -93,7 +94,52 @@ const Profile = () => {
     }
   };
 
-  // 4. دالة تحديث كلمة المرور للحساب الحالي
+  // 4. حذف المستخدم المحدد بواسطة الأدمن
+  const handleDeleteUser = async () => {
+    if (!selectedUserId) {
+      return Swal.fire('تنبيه', 'الرجاء اختيار مستخدم أولاً من القائمة للحذفه', 'warning');
+    }
+
+    const result = await Swal.fire({
+      title: 'هل أنت متأكد؟',
+      text: "لن يمكنك تراجع عن عملية حذف هذا المستخدم!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f40051',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'نعم، قم بالحذف',
+      cancelButtonText: 'إلغاء'
+    });
+
+    if (result.isConfirmed) {
+      setDeletingUser(true);
+      try {
+        await api.delete(`/admin/users/${selectedUserId}`);
+        Swal.fire({
+          icon: 'success',
+          title: 'تم الحذف',
+          text: 'تم حذف المستخدم بنجاح',
+          confirmButtonColor: '#f40051'
+        });
+        
+        // إعادة تعيين الخيارات وتحديث القائمة
+        setSelectedUserId('');
+        setEditFormData({ name: '', email: '', phone: '', role: 'user', new_password: '' });
+        fetchUsers();
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'فشل الحذف',
+          text: error.response?.data?.message || 'حدث خطأ أثناء محاولة حذف المستخدم',
+          confirmButtonColor: '#f40051'
+        });
+      } finally {
+        setDeletingUser(false);
+      }
+    }
+  };
+
+  // 5. دالة تحديث كلمة المرور للحساب الحالي
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     
@@ -143,7 +189,7 @@ const Profile = () => {
         </h3>
 
         <div className="mb-6">
-          <label className="block text-xs font-black text-slate-400 mb-2 uppercase">اختر المستخدم للتعديل على بياناته أو صلاحيته:</label>
+          <label className="block text-xs font-black text-slate-400 mb-2 uppercase">اختر المستخدم للتعديل على بياناته أو صلاحيته أو حذفه:</label>
           <select 
             className="w-full px-6 py-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-red-100 transition-all font-bold text-slate-700"
             value={selectedUserId}
@@ -220,13 +266,24 @@ const Profile = () => {
               />
             </div>
 
-            <button 
-              type="submit"
-              disabled={savingUser}
-              className={`flex items-center justify-center gap-3 bg-[#f40051] text-white px-10 py-4 rounded-2xl font-black transition-all shadow-lg active:scale-95 w-full md:w-auto ${savingUser ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-900'}`}
-            >
-              <FaSave /> {savingUser ? 'جاري الحفظ...' : 'حفظ البيانات والصلاحية'}
-            </button>
+            <div className="flex flex-col md:flex-row gap-4">
+              <button 
+                type="submit"
+                disabled={savingUser}
+                className={`flex items-center justify-center gap-3 bg-[#f40051] text-white px-10 py-4 rounded-2xl font-black transition-all shadow-lg active:scale-95 w-full md:w-auto ${savingUser ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-900'}`}
+              >
+                <FaSave /> {savingUser ? 'جاري الحفظ...' : 'حفظ البيانات والصلاحية'}
+              </button>
+
+              <button 
+                type="button"
+                onClick={handleDeleteUser}
+                disabled={deletingUser}
+                className={`flex items-center justify-center gap-3 bg-red-100 text-red-600 px-8 py-4 rounded-2xl font-black transition-all shadow-sm active:scale-95 w-full md:w-auto ${deletingUser ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-600 hover:text-white'}`}
+              >
+                <FaTrash /> {deletingUser ? 'جاري الحذف...' : 'حذف هذا المستخدم'}
+              </button>
+            </div>
           </form>
         )}
       </div>

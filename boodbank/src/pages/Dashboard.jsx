@@ -152,7 +152,7 @@ const Dashboard = ({
         <header className="h-24 bg-white/80 backdrop-blur-md flex items-center justify-between px-10 border-b border-slate-100 sticky top-0 z-30">
             <div className="relative w-96">
                <input type="text" placeholder="ابحث عن متبرع، مستشفى، أو استغاثة..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full py-3 pr-12 pl-4 bg-slate-100 rounded-2xl border-none font-bold text-sm focus:ring-2 focus:ring-red-100 transition-all"/>
+               className="w-full py-3 pr-12 pl-4 bg-slate-100 rounded-2xl border-none font-bold text-sm focus:ring-2 focus:ring-red-100 transition-all"/>
                <FaSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
             <div className="relative">
@@ -301,4 +301,3 @@ const StatCard = ({ title, value, bgColor, icon, onClick }) => (
 );
 
 export default Dashboard;
-

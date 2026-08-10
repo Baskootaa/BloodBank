@@ -34,7 +34,11 @@ Route::prefix('donors')->group(function () {
 Route::get('cities', function () {
     return response()->json(City::orderBy('name', 'asc')->get());
 });
+
 Route::get('hospitals', [HospitalController::class, 'index']); 
+// المسار الجديد لإضافة مستشفى يدوي مع اختيار المدينة
+Route::post('hospitals', [HospitalController::class, 'store']); 
+
 Route::post('hospitals/{id}/update-stock', [BloodStockController::class, 'updateStock']);
 
 // --- 4. طلبات الاستغاثة (Blood Requests) ---
@@ -86,6 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // 👑 مسارات الأدمن لإدارة وتعديل المستخدمين والصلاحيات
     Route::get('/admin/users', [AuthController::class, 'index']);
     Route::put('/admin/users/{id}', [AuthController::class, 'updateUser']);
+    Route::delete('/admin/users/{id}', [AuthController::class, 'destroy']); // 🗑️ مسار حذف المستخدم بواسطة الأدمن
 
     // تحديث كلمة المرور
     Route::post('/admin/update-password', function (Request $request) {
