@@ -19,7 +19,7 @@ import SignUp from './pages/SignUp';
 import AdminLogin from './pages/AdminLogin'; 
 import Profile from './pages/Profile'; 
 
-const API_URL = "http://127.0.0.1:8000/api"; 
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://blood-bank-delta-eight.vercel.app/api';
 
 // مكون للتحكم في التمرير لأعلى الصفحة عند تغيير المسار
 const ScrollToTop = () => {
