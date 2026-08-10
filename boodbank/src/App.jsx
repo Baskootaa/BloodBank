@@ -9,7 +9,7 @@ import api from './api/axios';
 // استيراد المكونات
 import Navbar from './components/Navbar';
 import Footer from './components/Footer'; 
-import ProtectedRoute from './components/ProtectedRoute'; // استيراد مكون الحماية الجديد
+import ProtectedRoute from './components/ProtectedRoute'; // استيراد مكون الحماية
 
 // استيراد الصفحات
 import Home from './pages/Home';
@@ -190,9 +190,9 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* الإعدادات */}
+          {/* الإعدادات: للأدمن فقط */}
           <Route path="/settings" element={
-            <ProtectedRoute allowAllUsers={true}>
+            <ProtectedRoute>
               <Profile />
             </ProtectedRoute>
           } />

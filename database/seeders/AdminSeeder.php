@@ -13,8 +13,8 @@ class AdminSeeder extends Seeder
     public function run()
 {
     \App\Models\User::create([
-        'name' => 'dr.mohamed',
-        'email' => 'dr.mohamed@gmail.com', // حط إيميل الدكتور هنا
+        'name' => 'Baskota',
+        'email' => 'baskota@gmail.com', // حط إيميل الدكتور هنا
         'password' => bcrypt('12345678'),
         'is_admin' => 1
     ]);
