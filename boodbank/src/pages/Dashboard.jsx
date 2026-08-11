@@ -382,7 +382,7 @@ const Dashboard = ({
                     </div>
                     <div>
                       <h4 className="text-xl font-black text-slate-800">{c.name}</h4>
-                      <p className="text-xs text-slate-400 font-bold mt-1">المستشفيات التابعة: {c.hospitals_count || c.hospitals?.length || 0}</p>
+                      <p className="text-xs text-slate-400 font-bold mt-1">المستشفيات التابعة: {c.hospitals_count ?? c.hospitals?.length ?? 0}</p>
                     </div>
                   </div>
                 ))}
