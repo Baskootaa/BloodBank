@@ -3,7 +3,7 @@ import {
   FaUsers, FaTint, FaHospital, FaExclamationTriangle, 
   FaTrash, FaSearch, FaBell, FaCalendarAlt, FaBox, 
   FaMapMarkerAlt, FaPhoneAlt, FaChevronRight, FaSyncAlt,
-  FaCheck, FaTimes, FaCity
+  FaCheck, FaTimes, FaCity, FaPlus
 } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import api from '../api/axios'; // ✅ استخدام محرك Axios الموحد
@@ -111,6 +111,65 @@ const Dashboard = ({
         refreshData(); 
         Swal.fire('تم التحديث', 'تم تعديل المخزون بنجاح', 'success');
       } catch (e) { Swal.fire('خطأ', 'فشل تحديث البيانات', 'error'); }
+    }
+  };
+
+  // دالة إضافة مستشفى جديد
+  const handleAddHospital = async () => {
+    const citiesOptions = cities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    const { value: formValues } = await Swal.fire({
+      title: 'إضافة مستشفى جديد',
+      html:
+        '<input id="swal-hospital-name" type="text" placeholder="اسم المستشفى" class="swal2-input">' +
+        '<input id="swal-hospital-address" type="text" placeholder="العنوان" class="swal2-input">' +
+        `<select id="swal-hospital-city" class="swal2-input"><option value="">اختر المدينة</option>${citiesOptions}</select>`,
+      confirmButtonText: 'إضافة',
+      confirmButtonColor: '#f40051',
+      preConfirm: () => {
+        const name = document.getElementById('swal-hospital-name').value;
+        const address = document.getElementById('swal-hospital-address').value;
+        const city_id = document.getElementById('swal-hospital-city').value;
+        if (!name || !address || !city_id) {
+          Swal.showValidationMessage('الرجاء إدخال كافة البيانات');
+        }
+        return { name, address, city_id };
+      }
+    });
+
+    if (formValues) {
+      try {
+        await api.post('/hospitals', formValues);
+        refreshData();
+        Swal.fire('تم بنجاح', 'تم إضافة المستشفى بنجاح', 'success');
+      } catch (e) {
+        Swal.fire('خطأ', 'فشل إضافة المستشفى', 'error');
+      }
+    }
+  };
+
+  // دالة إضافة مدينة جديدة
+  const handleAddCity = async () => {
+    const { value: cityName } = await Swal.fire({
+      title: 'إضافة مدينة جديدة',
+      input: 'text',
+      inputPlaceholder: 'اسم المدينة',
+      confirmButtonText: 'إضافة',
+      confirmButtonColor: '#10b981',
+      inputValidator: (value) => {
+        if (!value) {
+          return 'الرجاء إدخال اسم المدينة!';
+        }
+      }
+    });
+
+    if (cityName) {
+      try {
+        await api.post('/cities', { name: cityName });
+        refreshData();
+        Swal.fire('تم بنجاح', 'تم إضافة المدينة بنجاح', 'success');
+      } catch (e) {
+        Swal.fire('خطأ', 'فشل إضافة المدينة', 'error');
+      }
     }
   };
 
@@ -261,51 +320,73 @@ const Dashboard = ({
 
           {/* المستشفيات */}
           {activeTab === 'hospitals' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-500">
-              {filteredHospitals.map(h => {
-                const getQty = (type) => {
-                  const stock = h.blood_stocks?.find(s => s.blood_type === type);
-                  return stock ? stock.bags_quantity : 0;
-                };
-                const hospitalTotal = h.blood_stocks?.reduce((sum, s) => sum + (Number(s.bags_quantity) || 0), 0) || 0;
-                return (
-                  <div key={h.id} className="bg-white p-8 rounded-[3.5rem] shadow-sm border border-slate-100 hover:shadow-2xl transition-all group">
-                    <div className="flex items-center gap-6 mb-8">
-                      <div className="w-20 h-20 bg-[#f40051] text-white rounded-[2rem] flex flex-col items-center justify-center shadow-lg group-hover:scale-105 transition-transform"><span className="text-[10px] font-black opacity-70">TOTAL</span><span className="text-3xl font-black">{hospitalTotal}</span></div>
-                      <div>
-                        <h3 className="text-2xl font-black text-slate-800">{h.name}</h3>
-                        <p className="text-slate-400 text-[10px] font-black mt-1 flex items-center gap-2"><FaMapMarkerAlt className="text-[#f40051]"/> {h.city?.name} - {h.address}</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 gap-3">
-                      {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(type => (
-                        <div key={type} className="bg-slate-50 p-3 rounded-2xl text-center border border-transparent hover:border-red-100 hover:bg-red-50 transition-all group/item">
-                          <p className="text-[9px] font-black text-slate-400 group-hover/item:text-[#f40051] uppercase">{type}</p>
-                          <p className="text-lg font-black text-slate-800">{getQty(type)}</p>
+            <div className="animate-in fade-in duration-500">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-2xl font-black text-slate-800">قائمة المستشفيات</h3>
+                <button 
+                  onClick={handleAddHospital}
+                  className="flex items-center gap-2 px-6 py-3.5 bg-[#f40051] text-white rounded-2xl font-black text-xs hover:bg-red-600 transition-all shadow-lg shadow-red-100"
+                >
+                  <FaPlus /> إضافة مستشفى جديد
+                </button>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {filteredHospitals.map(h => {
+                  const getQty = (type) => {
+                    const stock = h.blood_stocks?.find(s => s.blood_type === type);
+                    return stock ? stock.bags_quantity : 0;
+                  };
+                  const hospitalTotal = h.blood_stocks?.reduce((sum, s) => sum + (Number(s.bags_quantity) || 0), 0) || 0;
+                  return (
+                    <div key={h.id} className="bg-white p-8 rounded-[3.5rem] shadow-sm border border-slate-100 hover:shadow-2xl transition-all group">
+                      <div className="flex items-center gap-6 mb-8">
+                        <div className="w-20 h-20 bg-[#f40051] text-white rounded-[2rem] flex flex-col items-center justify-center shadow-lg group-hover:scale-105 transition-transform"><span className="text-[10px] font-black opacity-70">TOTAL</span><span className="text-3xl font-black">{hospitalTotal}</span></div>
+                        <div>
+                          <h3 className="text-2xl font-black text-slate-800">{h.name}</h3>
+                          <p className="text-slate-400 text-[10px] font-black mt-1 flex items-center gap-2"><FaMapMarkerAlt className="text-[#f40051]"/> {h.city?.name} - {h.address}</p>
                         </div>
-                      ))}
+                      </div>
+                      <div className="grid grid-cols-4 gap-3">
+                        {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(type => (
+                          <div key={type} className="bg-slate-50 p-3 rounded-2xl text-center border border-transparent hover:border-red-100 hover:bg-red-50 transition-all group/item">
+                            <p className="text-[9px] font-black text-slate-400 group-hover/item:text-[#f40051] uppercase">{type}</p>
+                            <p className="text-lg font-black text-slate-800">{getQty(type)}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <button onClick={() => handleUpdateStock(h.id)} className="w-full mt-6 py-4 bg-slate-900 text-white rounded-[1.5rem] font-black text-xs hover:bg-[#f40051] transition-all flex items-center justify-center gap-3 shadow-lg shadow-slate-100"><FaSyncAlt /> تحديث مخزون المستشفى</button>
                     </div>
-                    <button onClick={() => handleUpdateStock(h.id)} className="w-full mt-6 py-4 bg-slate-900 text-white rounded-[1.5rem] font-black text-xs hover:bg-[#f40051] transition-all flex items-center justify-center gap-3 shadow-lg shadow-slate-100"><FaSyncAlt /> تحديث مخزون المستشفى</button>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
 
           {/* المدن */}
           {activeTab === 'cities' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
-              {filteredCities.map(c => (
-                <div key={c.id} className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all flex items-center gap-5">
-                  <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner">
-                    <FaCity />
+            <div className="animate-in fade-in duration-500">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-2xl font-black text-slate-800">قائمة المدن</h3>
+                <button 
+                  onClick={handleAddCity}
+                  className="flex items-center gap-2 px-6 py-3.5 bg-emerald-600 text-white rounded-2xl font-black text-xs hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
+                >
+                  <FaPlus /> إضافة مدينة جديدة
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredCities.map(c => (
+                  <div key={c.id} className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all flex items-center gap-5">
+                    <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner">
+                      <FaCity />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-black text-slate-800">{c.name}</h4>
+                      <p className="text-xs text-slate-400 font-bold mt-1">المستشفيات التابعة: {c.hospitals_count || c.hospitals?.length || 0}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xl font-black text-slate-800">{c.name}</h4>
-                    <p className="text-xs text-slate-400 font-bold mt-1">المستشفيات التابعة: {c.hospitals_count || c.hospitals?.length || 0}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </main>

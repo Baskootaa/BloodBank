@@ -7,6 +7,7 @@ use App\Http\Controllers\DonorController;
 use App\Http\Controllers\BloodRequestController;
 use App\Http\Controllers\HospitalController;
 use App\Http\Controllers\BloodStockController;
+use App\Http\Controllers\CityController;
 use App\Models\User;
 use App\Models\City;
 use Illuminate\Support\Facades\Hash;
@@ -35,8 +36,11 @@ Route::get('cities', function () {
     return response()->json(City::orderBy('name', 'asc')->get());
 });
 
+// المسار الجديد لإضافة مدينة جديدة (من خلال CityController)
+Route::post('cities', [CityController::class, 'store']);
+
 Route::get('hospitals', [HospitalController::class, 'index']); 
-// المسار الجديد لإضافة مستشفى يدوي مع اختيار المدينة
+// المسار لإضافة مستشفى يدوي مع اختيار المدينة
 Route::post('hospitals', [HospitalController::class, 'store']); 
 
 Route::post('hospitals/{id}/update-stock', [BloodStockController::class, 'updateStock']);
