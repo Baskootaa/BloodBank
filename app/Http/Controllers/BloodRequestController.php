@@ -43,7 +43,7 @@ class BloodRequestController extends Controller
             'bags_quantity' => 'required|integer|min:1|max:20',
             'details'       => 'nullable|string|max:500',
         ], [
-            'name.required'     => 'اسم المريض مطلوب',
+            'name.required'      => 'اسم المريض مطلوب',
             'blood_type.in'      => 'فصيلة الدم غير صحيحة',
             'phone.digits'       => 'رقم الهاتف يجب أن يكون 11 رقم',
             'hospital_id.exists' => 'المستشفى المختار غير متاح',
@@ -63,7 +63,6 @@ class BloodRequestController extends Controller
             return DB::transaction(function () use ($validated) {
                 
                 // 2. تحديث أو إنشاء سجل المريض (الجدول الأول: patients)
-                // أضفنا هنا كل الحقول اللي قاعدة البيانات عندك بتطلبها كـ NOT NULL
                 $patient = Patient::updateOrCreate(
                     ['phone' => $validated['phone']],
                     [
@@ -77,10 +76,9 @@ class BloodRequestController extends Controller
                     ]
                 );
 
-                // 3. إنشاء طلب الاستغاثة (الجدول الثاني: blood_requests)
+                // 3. إنشاء طلب الاستغاثة (الجدول الثاني: blood_requests) - تم استخدام patient_name
                 $bloodRequest = BloodRequest::create([
-                    'patient_id'    => $patient->id,
-                    'name'          => $validated['name'],
+                    'patient_name'  => $validated['name'],
                     'blood_type'    => $validated['blood_type'],
                     'phone'         => $validated['phone'],
                     'age'           => $validated['age'],
@@ -149,10 +147,8 @@ class BloodRequestController extends Controller
                 $bloodRequest->status = $newStatus;
                 $bloodRequest->save();
 
-                // تحديث جدول المرضى
-                if ($bloodRequest->patient_id) {
-                    Patient::where('id', $bloodRequest->patient_id)->update(['status' => $newStatus]);
-                }
+                // تحديث جدول المرضى برقم الهاتف كمحدد (بما أن جدول الطلبات يعتمد على patient_name ورقم الهاتف)
+                Patient::where('phone', $bloodRequest->phone)->update(['status' => $newStatus]);
 
                 return response()->json(['status' => 'success', 'message' => 'تم التحديث في الجدولين بنجاح']);
             });

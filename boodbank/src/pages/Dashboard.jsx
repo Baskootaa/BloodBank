@@ -3,7 +3,7 @@ import {
   FaUsers, FaTint, FaHospital, FaExclamationTriangle, 
   FaTrash, FaSearch, FaBell, FaCalendarAlt, FaBox, 
   FaMapMarkerAlt, FaPhoneAlt, FaChevronRight, FaSyncAlt,
-  FaCheck, FaTimes
+  FaCheck, FaTimes, FaCity
 } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import api from '../api/axios'; // ✅ استخدام محرك Axios الموحد
@@ -12,6 +12,7 @@ const Dashboard = ({
   donors = [], 
   hospitals = [], 
   emergencyRequests = [], 
+  cities = [], 
   deleteDonor, 
   refreshData 
 }) => {
@@ -67,6 +68,10 @@ const Dashboard = ({
     h.address?.toLowerCase().includes(lowerQuery)
   );
 
+  const filteredCities = cities.filter(c => 
+    c.name?.toLowerCase().includes(lowerQuery)
+  );
+
   // دالة تحديث حالة المتبرع
   const handleDonorStatus = async (id, status) => {
     try {
@@ -97,7 +102,7 @@ const Dashboard = ({
       confirmButtonColor: '#f40051',
       preConfirm: () => ({
         blood_type: document.getElementById('swal-blood-type').value,
-        quantity: document.getElementById('swal-bags').value
+        bags_quantity: document.getElementById('swal-bags').value // ✅ تم التعديل لتتوافق مع الـ Backend
       })
     });
     if (formValues) {
@@ -128,10 +133,11 @@ const Dashboard = ({
         </div>
         <nav className="p-6 space-y-3 flex-grow">
           {[
-            { id: 'overview', name: 'الرئيسية', icon: <FaBox /> },
+            { id: 'overview', name: 'الرئيسية', icon: <BoxIcon /> },
             { id: 'donors', name: 'المتبرعين', icon: <FaUsers /> },
             { id: 'requests', name: 'الاستغاثات', icon: <FaExclamationTriangle /> },
             { id: 'hospitals', name: 'المستشفيات', icon: <FaHospital /> },
+            { id: 'cities', name: 'المدن', icon: <FaCity /> },
           ].map((item) => (
             <button key={item.id} onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black transition-all ${activeTab === item.id ? 'bg-[#f40051] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
@@ -181,10 +187,11 @@ const Dashboard = ({
 
         <main className="p-8 pb-20">
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard title="المتبرعين المطابقين" value={filteredDonors.length} bgColor="bg-blue-600" icon={<FaUsers />} onClick={() => setActiveTab('donors')} />
               <StatCard title="المستشفيات المطابقة" value={filteredHospitals.length} bgColor="bg-[#f40051]" icon={<FaHospital />} onClick={() => setActiveTab('hospitals')} />
               <StatCard title="الاستغاثات المطابقة" value={filteredRequests.length} bgColor="bg-slate-900" icon={<FaExclamationTriangle />} onClick={() => setActiveTab('requests')} />
+              <StatCard title="المدن المسجلة" value={filteredCities.length} bgColor="bg-emerald-600" icon={<FaCity />} onClick={() => setActiveTab('cities')} />
             </div>
           )}
 
@@ -284,6 +291,23 @@ const Dashboard = ({
               })}
             </div>
           )}
+
+          {/* المدن */}
+          {activeTab === 'cities' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
+              {filteredCities.map(c => (
+                <div key={c.id} className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all flex items-center gap-5">
+                  <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner">
+                    <FaCity />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-black text-slate-800">{c.name}</h4>
+                    <p className="text-xs text-slate-400 font-bold mt-1">المستشفيات التابعة: {c.hospitals_count || c.hospitals?.length || 0}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </main>
       </div>
     </div>
@@ -291,13 +315,15 @@ const Dashboard = ({
 };
 
 const StatCard = ({ title, value, bgColor, icon, onClick }) => (
-  <button onClick={onClick} className={`${bgColor} w-full p-10 rounded-[3.5rem] text-right text-white shadow-xl relative overflow-hidden group hover:-translate-y-2 transition-all duration-500`}>
+  <button onClick={onClick} className={`${bgColor} w-full p-8 rounded-[3rem] text-right text-white shadow-xl relative overflow-hidden group hover:-translate-y-2 transition-all duration-500`}>
     <div className="absolute -right-6 -bottom-6 opacity-10 text-9xl group-hover:scale-125 transition-transform duration-700">{icon}</div>
     <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md text-2xl">{icon}</div>
     <p className="text-white/60 font-black text-xs uppercase tracking-widest">{title}</p>
-    <h3 className="text-5xl font-black mt-2 mb-4 tracking-tighter">{value}</h3>
+    <h3 className="text-4xl font-black mt-2 mb-4 tracking-tighter">{value}</h3>
     <div className="flex items-center gap-2 text-[10px] font-bold bg-white/10 w-fit px-4 py-2 rounded-full">عرض التفاصيل <FaChevronRight size={8} /></div>
   </button>
 );
+
+const BoxIcon = () => <FaBox />;
 
 export default Dashboard;
