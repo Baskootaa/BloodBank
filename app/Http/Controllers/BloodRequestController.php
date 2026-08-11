@@ -76,9 +76,9 @@ class BloodRequestController extends Controller
                     ]
                 );
 
-                // 3. إنشاء طلب الاستغاثة (الجدول الثاني: blood_requests) - تم استخدام patient_name
+                // 3. إنشاء طلب الاستغاثة (الجدول الثاني: blood_requests) - تم استخدام patient_id
                 $bloodRequest = BloodRequest::create([
-                    'patient_name'  => $validated['name'],
+                    'patient_id'    => $patient->id,
                     'blood_type'    => $validated['blood_type'],
                     'phone'         => $validated['phone'],
                     'age'           => $validated['age'],
@@ -147,7 +147,7 @@ class BloodRequestController extends Controller
                 $bloodRequest->status = $newStatus;
                 $bloodRequest->save();
 
-                // تحديث جدول المرضى برقم الهاتف كمحدد (بما أن جدول الطلبات يعتمد على patient_name ورقم الهاتف)
+                // تحديث جدول المرضى برقم الهاتف كمحدد
                 Patient::where('phone', $bloodRequest->phone)->update(['status' => $newStatus]);
 
                 return response()->json(['status' => 'success', 'message' => 'تم التحديث في الجدولين بنجاح']);

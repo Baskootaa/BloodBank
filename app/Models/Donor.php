@@ -17,7 +17,7 @@ class Donor extends Model
 
     /**
      * الحقول المسموح بتخزينها (Mass Assignment)
-     * تم إدراج quantity لدعم نظام المخزون وتطابقاً مع جدول قاعدة البيانات
+     * تم إدراج bags_quantity لدعم نظام المخزون وتطابقاً مع جدول قاعدة البيانات
      */
     protected $fillable = [
         'name', 
@@ -26,8 +26,8 @@ class Donor extends Model
         'age', 
         'city_id',
         'hospital_id',   
-        'quantity', 
-        'status'         
+        'bags_quantity', 
+        'status'        
     ];
 
     /**
@@ -38,7 +38,7 @@ class Donor extends Model
         'age'           => 'integer',
         'city_id'       => 'integer',
         'hospital_id'   => 'integer',
-        'quantity'      => 'integer',
+        'bags_quantity' => 'integer',
     ];
 
     /**

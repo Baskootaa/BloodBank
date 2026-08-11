@@ -27,8 +27,8 @@ class BloodStockController extends Controller
                 'name' => $item->hospital->name ?? 'غير محدد',
                 'blood_type' => $item->blood_type,
                 'address' => $item->hospital->address ?? 'غير محدد', 
-                'phone' => $item->hospital->phone ?? 'غير محدد',         
-                'stock' => $q,                   
+                'phone' => $item->hospital->phone ?? 'غير محدد',        
+                'stock' => $q,                     
                 'status' => $status,
                 'color' => $color
             ];

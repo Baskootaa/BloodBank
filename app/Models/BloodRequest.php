@@ -14,7 +14,7 @@ class BloodRequest extends Model
      * الحقول المسموح بتخزينها (Mass Assignment)
      */
     protected $fillable = [
-        'patient_name', // تم التعديل ليطابق اسم العمود الفعلي في قاعدة البيانات
+        'patient_id',   // تم التعديل ليطابق اسم العمود الفعلي في قاعدة البيانات
         'blood_type',
         'age',
         'phone',

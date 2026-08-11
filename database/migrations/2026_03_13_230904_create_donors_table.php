@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('phone');
             $table->integer('age');
             
-            // إضافة حقل الكمية (Quantity) الافتراضي 1
-            $table->integer('quantity')->default(1);
+            // تعديل حقل الكمية ليطابق اسم العمود الفعلي في قاعدة البيانات bags_quantity
+            $table->integer('bags_quantity')->default(1);
             
             // إضافة الحالة (Status) كـ enum لضمان قبول قيم محددة فقط
             $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');

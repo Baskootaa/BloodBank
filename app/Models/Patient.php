@@ -12,7 +12,7 @@ class Patient extends Model
 
     /**
      * الحقول المسموح بتخزينها
-     * أضفنا الحقول الناقصة لتطابق جدول الـ blood_requests
+     * أضفنا الحقول الناقصة لتطابق جدول الـ patients تماماً مع قاعدة البيانات
      */
     protected $fillable = [
         'name', 
@@ -20,9 +20,10 @@ class Patient extends Model
         'phone', 
         'city_id', 
         'age',
-        'bags_quantity', // تم إضافة هذا السطر
-        'hospital_id',   // تم إضافة هذا السطر
-        'status'         // تم إضافة هذا السطر (لأن الجدول يحتوي على حالة الطلب)
+        'bags_quantity', 
+        'hospital_id',   
+        'status',
+        'details' // تم إضافة هذا السطر ليتطابق مع عمود التفاصيل في قاعدة البيانات
     ];
 
     /**

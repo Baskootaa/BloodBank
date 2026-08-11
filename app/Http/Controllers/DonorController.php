@@ -34,7 +34,7 @@ class DonorController extends Controller
             'age'           => 'required|integer|min:18|max:65',
             'city_id'       => 'required|exists:cities,id', 
             'hospital_id'   => 'required|exists:hospitals,id', 
-            'quantity'      => 'required|integer|min:1|max:10', 
+            'bags_quantity' => 'required|integer|min:1|max:10', 
         ], [
             // رسائل خطأ مخصصة بالعربي لتحسين تجربة المستخدم
             'name.required'     => 'يرجى إدخال اسم المتبرع',
@@ -45,7 +45,7 @@ class DonorController extends Controller
             'age.max'           => 'الحد الأقصى للعمر هو 65 عاماً',
             'city_id.exists'    => 'المدينة المختارة غير موجودة في نظامنا',
             'hospital_id.exists'=> 'المستشفى المختار غير متاح حالياً',
-            'quantity.min'      => 'يجب التبرع بـ كيس دم واحد على الأقل',
+            'bags_quantity.min' => 'يجب التبرع بـ كيس دم واحد على الأقل',
         ]);
 
         if ($validator->fails()) {
@@ -64,7 +64,7 @@ class DonorController extends Controller
                 'age'           => $request->age,
                 'city_id'       => $request->city_id,
                 'hospital_id'   => $request->hospital_id,
-                'quantity'      => $request->quantity,
+                'bags_quantity' => $request->bags_quantity,
                 'status'        => 'pending', 
             ]);
 
@@ -110,7 +110,7 @@ class DonorController extends Controller
                         ['bags_quantity' => 0]
                     );
 
-                    $stock->increment('bags_quantity', $donor->quantity);
+                    $stock->increment('bags_quantity', $donor->bags_quantity);
                 }
                 
                 // 2. حالة الرفض (إذا كان مقبولاً سابقاً): خصم من المخزون
@@ -121,7 +121,7 @@ class DonorController extends Controller
                                        ->first();
 
                     if ($stock) {
-                        $stock->decrement('bags_quantity', $donor->quantity);
+                        $stock->decrement('bags_quantity', $donor->bags_quantity);
                         if ($stock->bags_quantity < 0) $stock->update(['bags_quantity' => 0]);
                     }
                 }
@@ -152,7 +152,7 @@ class DonorController extends Controller
                                        ->where('blood_type', $donor->blood_type)
                                        ->first();
                     if ($stock) {
-                        $stock->decrement('bags_quantity', $donor->quantity);
+                        $stock->decrement('bags_quantity', $donor->bags_quantity);
                         if ($stock->bags_quantity < 0) $stock->update(['bags_quantity' => 0]);
                     }
                 }

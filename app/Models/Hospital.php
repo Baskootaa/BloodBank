@@ -13,7 +13,6 @@ class Hospital extends Model
         'name', 
         'address', 
         'city_id',
-        'stock'
     ];
 
     /**

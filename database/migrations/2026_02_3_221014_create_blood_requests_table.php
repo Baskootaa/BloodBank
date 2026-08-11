@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('blood_requests', function (Blueprint $table) {
             $table->id();
-            $table->string('patient_name'); // اسم المريض أو الحالة
+            $table->foreignId('patient_id')->nullable()->constrained('patients')->onDelete('cascade'); // تم التعديل لربط الطلب بجدول المرضى
             $table->string('blood_type');
             $table->string('phone');
             $table->integer('age');

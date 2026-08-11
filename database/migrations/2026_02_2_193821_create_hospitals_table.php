@@ -19,9 +19,6 @@ return new class extends Migration
             // ربط جدول المستشفيات بجدول المدن (العلاقة المطلوبة)
             $table->foreignId('city_id')->constrained('cities')->onDelete('cascade');
             
-            // عمود المخزون (إذا كان مستخدماً في الـ Seeders)
-            $table->integer('stock')->default(0);
-            
             $table->timestamps();
         });
     }

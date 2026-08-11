@@ -20,8 +20,8 @@ return new class extends Migration
             // نوع فصيلة الدم
             $table->string('blood_type'); 
             
-            // كمية الأكياس (تم تعديل الاسم إلى quantity ليتوافق مع الـ Seeder)
-            $table->integer('quantity')->default(0);
+            // كمية الأكياس (تم تعديل الاسم إلى bags_quantity ليطابق قاعدة البيانات والكنترولر والموديل)
+            $table->integer('bags_quantity')->default(0);
             
             $table->timestamps();
         });

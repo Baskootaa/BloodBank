@@ -44,7 +44,7 @@ class BloodStock extends Model
     protected function bagsQuantity(): Attribute
     {
         return Attribute::make(
-            set: fn (string $value) => $value < 0 ? 0 : $value,
+            set: fn ($value) => $value < 0 ? 0 : $value,
         );
     }
 

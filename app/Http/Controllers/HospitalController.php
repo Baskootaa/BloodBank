@@ -36,14 +36,12 @@ class HospitalController extends Controller
             'name' => 'required|string|max:255',
             'address' => 'nullable|string|max:255',
             'city_id' => 'required|exists:cities,id',
-            'stock' => 'nullable|integer'
         ]);
 
         $hospital = Hospital::create([
             'name' => $request->name,
             'address' => $request->address ?? 'غير محدد',
             'city_id' => $request->city_id,
-            'stock' => $request->stock ?? 0,
         ]);
 
         // جلب المستشفى مع بيانات المدينة لترجيعها للفرونت إند بشكل متكامل
