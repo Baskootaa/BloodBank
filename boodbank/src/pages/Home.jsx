@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FaPhoneAlt, FaMapMarkerAlt, FaTrash, FaHospital, FaTint, FaCheckCircle, FaCogs, FaRocket, FaCalendarCheck, FaExclamationTriangle } from 'react-icons/fa';
+import { FaPhoneAlt, FaMapMarkerAlt, FaTrash, FaHospital, FaCheckCircle, FaCogs, FaRocket, FaCalendarCheck } from 'react-icons/fa';
 
 // استلام searchTerm كـ Props من الأب (App.jsx) لضمان عمل البحث العام
 const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, isAuth, searchTerm = '' }) => {
@@ -108,7 +108,6 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
                 {filteredDonors.length > 0 ? (
                   filteredDonors.map((donor) => (
                     <div key={donor.id} className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 hover:shadow-xl transition-all text-right relative group">
-                        {/* زر حذف المتبرع للأدمن */}
                         {isAuth && deleteDonor && (
                           <button 
                             onClick={() => deleteDonor(donor.id)} 
@@ -228,7 +227,7 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
         )}
       </div>
 
-      {/* 🌳 قسم شجرة الدم التفاعلية وتقرير التقدم (تم نقله ليصبح في الأسفل فوق الفوتر مباشرة) */}
+      {/* 🌳 قسم شجرة الأوردة وتفرعات الدم في الأسفل (بدون شرح أو نصوص داخلية) */}
       <div className="max-w-7xl mx-auto px-8">
         <div className="bg-white rounded-[3.5rem] p-8 shadow-sm border border-red-50 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-red-50/30 to-transparent pointer-events-none"></div>
@@ -268,16 +267,21 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
               </div>
             </div>
 
-            {/* العمود الأوسط: شجرة الدم */}
-            <div className="flex flex-col items-center justify-center text-center p-8 bg-gradient-to-b from-white to-red-50/20 rounded-[3rem] border border-red-100 shadow-xl relative">
-              <div className="w-24 h-24 bg-gradient-to-tr from-[#f40051] to-red-400 text-white rounded-full flex items-center justify-center text-5xl mx-auto shadow-2xl shadow-red-200 animate-pulse mb-4">
-                <FaTint />
+            {/* العمود الأوسط: صورة شجرة الدم المتشعبة بدون نصوص شرح */}
+            <div className="flex flex-col items-center justify-center text-center p-8 bg-gradient-to-b from-white to-red-50/20 rounded-[3rem] border border-red-100 shadow-xl relative overflow-hidden group">
+              <div className="absolute inset-0 bg-red-50/10 pointer-events-none"></div>
+              
+              {/* صورة شجرة الأوردة/فروع الدم */}
+              <div className="w-full max-h-[280px] flex items-center justify-center my-2 transition-transform duration-500 group-hover:scale-105">
+                <img 
+                  src="https://images.unsplash.com/photo-1615461066841-6116e61058f4?q=80&w=600&auto=format&fit=crop" 
+                  alt="Blood Vessel Tree Branches" 
+                  className="w-48 h-48 object-cover rounded-full shadow-2xl border-4 border-red-100 animate-pulse opacity-90"
+                />
               </div>
-              <h3 className="text-xl font-black text-gray-900 tracking-tight">BLOODBANK INTEGRITY</h3>
-              <p className="text-[11px] font-black text-[#f40051] uppercase tracking-widest mt-1 mb-4">Core Objectives & Risk Management</p>
-              <div className="w-full bg-white p-4 rounded-2xl border border-red-50 text-[11px] font-bold text-gray-600 shadow-sm">
-                🌳 ربط الأعضاء الحيوية للمنظومة بقاعدة بيانات مركزية آمنة.
-              </div>
+
+              <h3 className="text-lg font-black text-gray-900 tracking-tight mt-3">BLOODBANK INTEGRITY</h3>
+              <p className="text-[11px] font-black text-[#f40051] uppercase tracking-widest mt-1">Core Objectives & Risk Management</p>
             </div>
 
             {/* العمود الأيسر */}
