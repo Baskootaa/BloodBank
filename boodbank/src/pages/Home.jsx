@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FaPhoneAlt, FaMapMarkerAlt, FaTrash, FaHospital } from 'react-icons/fa';
+import { FaPhoneAlt, FaMapMarkerAlt, FaTrash, FaHospital, FaTint, FaCheckCircle, FaCogs, FaRocket, FaCalendarCheck, FaExclamationTriangle } from 'react-icons/fa';
 
 // استلام searchTerm كـ Props من الأب (App.jsx) لضمان عمل البحث العام
 const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, isAuth, searchTerm = '' }) => {
@@ -48,7 +48,7 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
   return (
     <div className="min-h-screen bg-gray-50 font-arabic pb-20" dir="rtl">
       
-      {/* قسم الهيدر */}
+      {/* قسم الهيدر والتبويبات الأصلي */}
       <div className="bg-white border-b px-8 py-12 text-center mb-10 shadow-sm">
         <h1 className="text-4xl font-black text-gray-800 mb-6">
             {activeTab === 'donors' ? 'قائمة المتبرعين بالدم 🩸' : 
@@ -100,7 +100,7 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-8">
+      <div className="max-w-7xl mx-auto px-8 mb-20">
         
         {/* قسم المتبرعين */}
         {activeTab === 'donors' && (
@@ -153,24 +153,34 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
         {activeTab === 'hospitals' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredHospitals.length > 0 ? (
-                    filteredHospitals.map(h => (
-                        <div key={h.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 transition-all hover:border-red-100">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="w-12 h-12 bg-blue-50 text-blue-500 flex items-center justify-center rounded-xl text-xl">
-                                  <FaHospital />
+                    filteredHospitals.map(h => {
+                        const totalBags = h.bloodStocks 
+                          ? h.bloodStocks.reduce((sum, stock) => sum + (Number(stock.bags_quantity) || 0), 0) 
+                          : (Number(h.total_bags_count) || 0);
+
+                        return (
+                            <div key={h.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 transition-all hover:border-red-100">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-blue-50 text-blue-500 flex items-center justify-center rounded-xl text-xl">
+                                      <FaHospital />
+                                    </div>
+                                    <h3 className="font-black text-gray-800 text-lg">{h.name || h.hospital_name}</h3>
                                 </div>
-                                <h3 className="font-black text-gray-800 text-lg">{h.name || h.hospital_name}</h3>
+                                <p className="text-gray-500 text-sm flex items-center gap-2 mb-4">
+                                  <FaMapMarkerAlt className="text-blue-500 shrink-0" /> 
+                                  {h.address || h.location || h.city?.name || "العنوان غير متوفر"}
+                                </p>
+                                <div className="pt-4 border-t border-gray-50 flex justify-between items-center">
+                                    <span className="text-xs font-bold text-gray-400">حالة المستشفى</span>
+                                    {totalBags > 0 ? (
+                                        <span className="text-green-500 text-xs font-black bg-green-50 px-3 py-1 rounded-full">متوفر مخزون</span>
+                                    ) : (
+                                        <span className="text-red-500 text-xs font-black bg-red-50 px-3 py-1 rounded-full">الرصيد فارغ</span>
+                                    )}
+                                </div>
                             </div>
-                            <p className="text-gray-500 text-sm flex items-center gap-2 mb-4">
-                              <FaMapMarkerAlt className="text-blue-500 shrink-0" /> 
-                              {h.address || h.location || h.city?.name || "العنوان غير متوفر"}
-                            </p>
-                            <div className="pt-4 border-t border-gray-50 flex justify-between items-center">
-                                <span className="text-xs font-bold text-gray-400">حالة المستشفى</span>
-                                <span className="text-green-500 text-xs font-black bg-green-50 px-3 py-1 rounded-full">متوفر مخزون</span>
-                            </div>
-                        </div>
-                    ))
+                        );
+                    })
                 ) : (
                     <div className="col-span-full text-center py-10 text-gray-400 font-bold">لم نجد مستشفيات بهذا الاسم أو العنوان..</div>
                 )}
@@ -217,6 +227,88 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
             </div>
         )}
       </div>
+
+      {/* 🌳 قسم شجرة الدم التفاعلية وتقرير التقدم (تم نقله ليصبح في الأسفل فوق الفوتر مباشرة) */}
+      <div className="max-w-7xl mx-auto px-8">
+        <div className="bg-white rounded-[3.5rem] p-8 shadow-sm border border-red-50 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-red-50/30 to-transparent pointer-events-none"></div>
+          
+          <div className="text-center mb-10 relative z-10">
+            <span className="bg-red-50 text-[#f40051] text-xs font-black px-4 py-1.5 rounded-full border border-red-100 uppercase tracking-widest inline-block mb-3">
+              BloodBank Project Integrity
+            </span>
+            <h2 className="text-3xl font-black text-gray-900 tracking-tight">شجرة الدم وشفافية المشروع</h2>
+            <p className="text-gray-400 font-bold text-sm mt-2">إدارة الأهداف الحيوية، المخاطر، ومتابعة حالة الإنجاز بدقة.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center relative z-10">
+            
+            {/* العمود الأيمن */}
+            <div className="space-y-6">
+              <div className="bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100 hover:shadow-md transition-all">
+                <div className="w-12 h-12 bg-red-50 text-[#f40051] rounded-2xl flex items-center justify-center font-black text-xl mb-4 shadow-inner">
+                  <FaCheckCircle />
+                </div>
+                <h3 className="text-base font-black text-gray-800 mb-2">1. Completed Work</h3>
+                <ul className="space-y-2 text-xs font-bold text-gray-500 list-disc list-inside">
+                  <li>Requirements analysis and core database schema design successfully completed.</li>
+                  <li>Finalized UI/UX wireframes for main interface and login.</li>
+                </ul>
+              </div>
+
+              <div className="bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100 hover:shadow-md transition-all">
+                <div className="w-12 h-12 bg-red-50 text-[#f40051] rounded-2xl flex items-center justify-center font-black text-xl mb-4 shadow-inner">
+                  <FaCogs />
+                </div>
+                <h3 className="text-base font-black text-gray-800 mb-2">2. Work in Progress</h3>
+                <ul className="space-y-2 text-xs font-bold text-gray-500 list-disc list-inside">
+                  <li>Administrative dashboard development and database connection.</li>
+                  <li>Implementation of real-time inventory tracking module.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* العمود الأوسط: شجرة الدم */}
+            <div className="flex flex-col items-center justify-center text-center p-8 bg-gradient-to-b from-white to-red-50/20 rounded-[3rem] border border-red-100 shadow-xl relative">
+              <div className="w-24 h-24 bg-gradient-to-tr from-[#f40051] to-red-400 text-white rounded-full flex items-center justify-center text-5xl mx-auto shadow-2xl shadow-red-200 animate-pulse mb-4">
+                <FaTint />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">BLOODBANK INTEGRITY</h3>
+              <p className="text-[11px] font-black text-[#f40051] uppercase tracking-widest mt-1 mb-4">Core Objectives & Risk Management</p>
+              <div className="w-full bg-white p-4 rounded-2xl border border-red-50 text-[11px] font-bold text-gray-600 shadow-sm">
+                🌳 ربط الأعضاء الحيوية للمنظومة بقاعدة بيانات مركزية آمنة.
+              </div>
+            </div>
+
+            {/* العمود الأيسر */}
+            <div className="space-y-6">
+              <div className="bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100 hover:shadow-md transition-all">
+                <div className="w-12 h-12 bg-red-50 text-[#f40051] rounded-2xl flex items-center justify-center font-black text-xl mb-4 shadow-inner">
+                  <FaRocket />
+                </div>
+                <h3 className="text-base font-black text-gray-800 mb-2">3. Upcoming Tasks</h3>
+                <ul className="space-y-2 text-xs font-bold text-gray-500 list-disc list-inside">
+                  <li>Beginning security tests and strict input validation rules.</li>
+                  <li>Preparing initial MVP build for user testing by next week.</li>
+                </ul>
+              </div>
+
+              <div className="bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100 hover:shadow-md transition-all">
+                <div className="w-12 h-12 bg-red-50 text-[#f40051] rounded-2xl flex items-center justify-center font-black text-xl mb-4 shadow-inner">
+                  <FaCalendarCheck />
+                </div>
+                <h3 className="text-base font-black text-gray-800 mb-2">4. Timeline & Status</h3>
+                <ul className="space-y-2 text-xs font-bold text-gray-500 list-disc list-inside">
+                  <li>Status: Running smoothly and fully On Track with schedule.</li>
+                  <li>Milestone: Initial prototype delivery remains on schedule.</li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 };

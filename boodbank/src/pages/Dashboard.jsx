@@ -20,10 +20,11 @@ const Dashboard = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // حساب إجمالي المخزون الكلي
+  // حساب إجمالي المخزون الكلي مع دعم كلا الشكلين (blood_stocks أو bloodStocks)
   const totalBagsAllHospitals = useMemo(() => {
     return hospitals.reduce((total, h) => {
-        const hospitalSum = h.blood_stocks?.reduce((sum, s) => sum + (Number(s.bags_quantity) || 0), 0) || 0;
+        const stocks = h.blood_stocks || h.bloodStocks || [];
+        const hospitalSum = stocks.reduce((sum, s) => sum + (Number(s.bags_quantity || s.quantity) || 0), 0);
         return total + hospitalSum;
     }, 0);
   }, [hospitals]);
@@ -332,11 +333,12 @@ const Dashboard = ({
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {filteredHospitals.map(h => {
+                  const stocks = h.blood_stocks || h.bloodStocks || [];
                   const getQty = (type) => {
-                    const stock = h.blood_stocks?.find(s => s.blood_type === type);
-                    return stock ? stock.bags_quantity : 0;
+                    const stock = stocks.find(s => (s.blood_type || s.bloodType) === type);
+                    return stock ? (stock.bags_quantity || stock.quantity || 0) : 0;
                   };
-                  const hospitalTotal = h.blood_stocks?.reduce((sum, s) => sum + (Number(s.bags_quantity) || 0), 0) || 0;
+                  const hospitalTotal = stocks.reduce((sum, s) => sum + (Number(s.bags_quantity || s.quantity) || 0), 0);
                   return (
                     <div key={h.id} className="bg-white p-8 rounded-[3.5rem] shadow-sm border border-slate-100 hover:shadow-2xl transition-all group">
                       <div className="flex items-center gap-6 mb-8">
@@ -375,17 +377,25 @@ const Dashboard = ({
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCities.map(c => (
-                  <div key={c.id} className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all flex items-center gap-5">
-                    <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner">
-                      <FaCity />
+                {filteredCities.map(c => {
+                  // حساب عدد المستشفيات التابعة للمدينة بدقة من قائمة المستشفيات الفعلية
+                  const hospitalsInCity = hospitals.filter(h => 
+                    h.city_id === c.id || h.cityId === c.id || h.city?.id === c.id || h.city_name === c.name || h.city?.name === c.name
+                  );
+                  const hospitalsCount = c.hospitals_count ?? hospitalsInCity.length;
+
+                  return (
+                    <div key={c.id} className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all flex items-center gap-5">
+                      <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner">
+                        <FaCity />
+                      </div>
+                      <div>
+                        <h4 className="text-xl font-black text-slate-800">{c.name}</h4>
+                        <p className="text-xs text-slate-400 font-bold mt-1">المستشفيات التابعة: {hospitalsCount}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-xl font-black text-slate-800">{c.name}</h4>
-                      <p className="text-xs text-slate-400 font-bold mt-1">المستشفيات التابعة: {c.hospitals_count ?? c.hospitals?.length ?? 0}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
