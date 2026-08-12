@@ -89,14 +89,14 @@ class HospitalController extends Controller
     {
         $request->validate([
             'blood_type' => 'required|string', 
-            'quantity' => 'required|integer' 
+            'bags_quantity' => 'required|integer' 
         ]);
 
         $hospital = Hospital::findOrFail($id);
 
         $stock = $hospital->bloodStocks()->updateOrCreate(
             ['blood_type' => $request->blood_type],
-            ['bags_quantity' => $request->quantity] 
+            ['bags_quantity' => $request->bags_quantity] 
         );
 
         return response()->json([
