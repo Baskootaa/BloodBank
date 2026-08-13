@@ -8,8 +8,9 @@ const Profile = () => {
   const [usersList, setUsersList] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState('');
   
-  // التحقق مما إذا كان المستخدم الحالي هو الأدمن
-  const isAdmin = localStorage.getItem('isLogged') === 'true';
+  // التحقق مما إذا كان المستخدم الحالي هو الأدمن بدقة (حسب الـ role المخزن)
+  const userRole = localStorage.getItem('user_role');
+  const isAdmin = localStorage.getItem('isLogged') === 'true' && userRole?.toLowerCase() === 'admin';
   
   // بيانات المستخدم المحدد للتعديل
   const [editFormData, setEditFormData] = useState({
@@ -186,7 +187,7 @@ const Profile = () => {
         <FaUserShield className="text-[#f40051]" /> إعدادات النظام والبروفايل
       </h2>
 
-      {/* قسم تعديل الحسابات والصلاحيات (يظهر للأدمن فقط، بينما الموظف والمستخدم العادي تظهر له صفحة البروفايل وتغيير الباسورد فقط) */}
+      {/* قسم تعديل الحسابات والصلاحيات (يظهر للأدمن فقط تماماً، ويختفي للموظف والمستخدم العادي) */}
       {isAdmin && (
         <div className="bg-white p-8 rounded-[3rem] border shadow-sm mb-10">
           <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">

@@ -82,15 +82,17 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
               >
                 <FaBell size={16} />
                 {notifications.length > 0 && (
-                  <span className="absolute top-0 right-0 w-3 h-3 bg-yellow-400 rounded-full border-2 border-[#f40051] animate-pulse"></span>
+                  <span className="absolute -top-1 -right-1 bg-yellow-400 text-slate-900 font-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#f40051] shadow-md animate-pulse">
+                    {notifications.length}
+                  </span>
                 )}
               </button>
 
               {showNotifications && (
                 <div className="absolute top-full left-0 mt-3 w-80 bg-white text-slate-800 shadow-2xl rounded-3xl border border-slate-100 z-50 py-4" dir="rtl">
-                  <div className="px-5 pb-3 border-b font-black text-xs text-slate-400 uppercase flex justify-between">
+                  <div className="px-5 pb-3 border-b font-black text-xs text-slate-400 uppercase flex justify-between items-center">
                     <span>الإشعارات والطلبات</span>
-                    <span className="bg-red-100 text-[#f40051] px-2 rounded-full">{notifications.length}</span>
+                    <span className="bg-red-100 text-[#f40051] px-2 py-0.5 rounded-full">{notifications.length}</span>
                   </div>
                   <div className="max-h-80 overflow-y-auto">
                     {notifications.length === 0 ? (
@@ -99,14 +101,14 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
                       notifications.map((notif, idx) => (
                         <div 
                           key={idx} 
-                          className="p-4 hover:bg-slate-50 cursor-pointer border-b last:border-0" 
+                          className="p-4 hover:bg-slate-50 cursor-pointer border-b last:border-0 transition-colors" 
                           onClick={() => {
                             setShowNotifications(false);
                             navigate('/dashboard');
                           }}
                         >
                           <p className="text-[11px] font-black text-slate-800">{notif.title}</p>
-                          <p className="text-[10px] text-slate-400 font-bold">{notif.sub}</p>
+                          <p className="text-[10px] text-slate-400 font-bold mt-0.5">{notif.sub}</p>
                         </div>
                       ))
                     )}
