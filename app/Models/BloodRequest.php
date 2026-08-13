@@ -42,7 +42,15 @@ class BloodRequest extends Model
     }
 
     /**
+     * علاقة الطلب بالمريض
+     */
+    public function patient(): BelongsTo
+    {
+        return $this->belongsTo(Patient::class, 'patient_id');
+    }
+
+    /**
      * تحميل العلاقات أوتوماتيكياً
      */
-    protected $with = ['city', 'hospital'];
+    protected $with = ['city', 'hospital', 'patient'];
 }
