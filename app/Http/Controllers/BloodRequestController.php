@@ -56,21 +56,19 @@ class BloodRequestController extends Controller
         try {
             return DB::transaction(function () use ($validated) {
                 
-                // إنشاء أو تحديث بيانات المريض
-                $patient = Patient::updateOrCreate(
-                    ['phone' => $validated['phone']],
-                    [
-                        'name'          => $validated['name'],
-                        'blood_type'    => $validated['blood_type'],
-                        'city_id'       => $validated['city_id'],
-                        'age'           => $validated['age'],
-                        'status'        => 'pending', 
-                        'bags_quantity' => $validated['bags_quantity'],
-                        'hospital_id'   => $validated['hospital_id'], 
-                    ]
-                );
+                // إنشاء سجل جديد تماماً للمريض مع كل طلب استغاثة لضمان تطابق الاسم ورقم الهاتف
+                $patient = Patient::create([
+                    'name'          => $validated['name'],
+                    'phone'         => $validated['phone'],
+                    'blood_type'    => $validated['blood_type'],
+                    'city_id'       => $validated['city_id'],
+                    'age'           => $validated['age'],
+                    'status'        => 'pending', 
+                    'bags_quantity' => $validated['bags_quantity'],
+                    'hospital_id'   => $validated['hospital_id'], 
+                ]);
 
-                // إنشاء طلب الاستغاثة وربطه بـ patient_id
+                // إنشاء طلب الاستغاثة وربطه بـ patient_id الجديد
                 $bloodRequest = BloodRequest::create([
                     'patient_id'    => $patient->id,
                     'blood_type'    => $validated['blood_type'],

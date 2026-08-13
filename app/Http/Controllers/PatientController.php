@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Patient;
+use App\Models\BloodRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class PatientController extends Controller
@@ -64,23 +66,39 @@ class PatientController extends Controller
         }
 
         try {
-            $patient = Patient::create([
-                'name'          => $request->name,
-                'phone'         => $request->phone,
-                'blood_type'    => $request->blood_type,
-                'age'           => $request->age,
-                'bags_quantity' => $request->bags_quantity,
-                'status'        => 'pending',
-                'city_id'       => $request->city_id,
-                'hospital_id'   => $request->hospital_id,
-                'details'       => $request->details,
-            ]);
+            return DB::transaction(function () use ($request) {
+                // 1. إنشاء سجل المريض
+                $patient = Patient::create([
+                    'name'          => $request->name,
+                    'phone'         => $request->phone,
+                    'blood_type'    => $request->blood_type,
+                    'age'           => $request->age,
+                    'bags_quantity' => $request->bags_quantity,
+                    'status'        => 'pending',
+                    'city_id'       => $request->city_id,
+                    'hospital_id'   => $request->hospital_id,
+                    'details'       => $request->details,
+                ]);
 
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'تم تسجيل طلب المريض بنجاح',
-                'data'    => $patient->load(['city', 'hospital'])
-            ], 201);
+                // 2. إنشاء طلب استغاثة مرتبط تلقائياً بهذا المريض لضمان ظهوره في الاستغاثات
+                BloodRequest::create([
+                    'patient_id'    => $patient->id,
+                    'blood_type'    => $request->blood_type,
+                    'phone'         => $request->phone,
+                    'age'           => $request->age,
+                    'city_id'       => $request->city_id,
+                    'hospital_id'   => $request->hospital_id,
+                    'bags_quantity' => $request->bags_quantity,
+                    'details'       => $request->details,
+                    'status'        => 'pending',
+                ]);
+
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'تم تسجيل بيانات المريض والاستغاثة بنجاح',
+                    'data'    => $patient->load(['city', 'hospital'])
+                ], 201);
+            });
 
         } catch (\Exception $e) {
             return response()->json([

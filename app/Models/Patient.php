@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Patient extends Model
@@ -41,5 +42,13 @@ class Patient extends Model
     public function hospital(): BelongsTo
     {
         return $this->belongsTo(Hospital::class);
+    }
+
+    /**
+     * علاقة المريض بطلبات الاستغاثة (بحيث يمكن للمريض الواحد أن يكون له طلبات متعددة)
+     */
+    public function bloodRequests(): HasMany
+    {
+        return $this->hasMany(BloodRequest::class);
     }
 }
