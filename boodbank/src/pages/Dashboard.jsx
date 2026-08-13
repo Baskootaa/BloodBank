@@ -14,11 +14,15 @@ const Dashboard = ({
   emergencyRequests = [], 
   cities = [], 
   deleteDonor, 
-  refreshData 
+  refreshData,
+  userRole = 'admin' // تحديد الدور (افتراضياً admin أو employee)
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
+
+  // التحقق مما إذا كان المستخدم الحالي هو الأدمن
+  const isAdmin = userRole === 'admin' || userRole === 'Admin';
 
   // حساب إجمالي المخزون الكلي مع دعم كلا الشكلين (blood_stocks أو bloodStocks)
   const totalBagsAllHospitals = useMemo(() => {
@@ -103,7 +107,7 @@ const Dashboard = ({
       confirmButtonColor: '#f40051',
       preConfirm: () => ({
         blood_type: document.getElementById('swal-blood-type').value,
-        bags_quantity: document.getElementById('swal-bags').value // ✅ تم التعديل لتتوافق مع الـ Backend
+        bags_quantity: document.getElementById('swal-bags').value 
       })
     });
     if (formValues) {
@@ -115,8 +119,12 @@ const Dashboard = ({
     }
   };
 
-  // دالة إضافة مستشفى جديد
+  // دالة إضافة مستشفى جديد (للأدمن فقط)
   const handleAddHospital = async () => {
+    if (!isAdmin) {
+      Swal.fire('غيرحاصل على صلاحية', 'عذراً، إضافة مستشفى مقتصرة على الأدمن فقط', 'warning');
+      return;
+    }
     const citiesOptions = cities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     const { value: formValues } = await Swal.fire({
       title: 'إضافة مستشفى جديد',
@@ -148,8 +156,12 @@ const Dashboard = ({
     }
   };
 
-  // دالة إضافة مدينة جديدة
+  // دالة إضافة مدينة جديدة (للأدمن فقط)
   const handleAddCity = async () => {
+    if (!isAdmin) {
+      Swal.fire('غير حاصل على صلاحية', 'عذراً، إضافة مدينة مقتصرة على الأدمن فقط', 'warning');
+      return;
+    }
     const { value: cityName } = await Swal.fire({
       title: 'إضافة مدينة جديدة',
       input: 'text',
@@ -190,6 +202,9 @@ const Dashboard = ({
       <aside className="w-72 bg-white flex flex-col shadow-2xl z-20 border-l border-slate-100">
         <div className="p-8 text-center border-b border-slate-50">
           <h2 className="text-2xl font-black text-[#f40051] italic tracking-tighter">BASKOTA</h2>
+          <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">
+            {isAdmin ? 'لوحة المشرف (Admin)' : 'لوحة الموظف (Employee)'}
+          </span>
         </div>
         <nav className="p-6 space-y-3 flex-grow">
           {[
@@ -215,12 +230,15 @@ const Dashboard = ({
       </aside>
 
       <div className="flex-grow flex flex-col min-w-0 h-screen overflow-y-auto">
+        {/* Header العام ويحتوي على شريط البحث وجرس الإشعارات الفعال للجميع */}
         <header className="h-24 bg-white/80 backdrop-blur-md flex items-center justify-between px-10 border-b border-slate-100 sticky top-0 z-30">
             <div className="relative w-96">
                <input type="text" placeholder="ابحث عن متبرع، مستشفى، أو استغاثة..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                className="w-full py-3 pr-12 pl-4 bg-slate-100 rounded-2xl border-none font-bold text-sm focus:ring-2 focus:ring-red-100 transition-all"/>
                <FaSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
+            
+            {/* جرس الإشعارات العام والفعال للموظف والأدمن */}
             <div className="relative">
                <button onClick={() => setShowNotifications(!showNotifications)} className="p-3.5 bg-slate-100 text-slate-500 rounded-2xl relative hover:text-[#f40051] transition-all shadow-sm">
                  <FaBell />
@@ -229,16 +247,20 @@ const Dashboard = ({
                {showNotifications && (
                  <div className="absolute top-full left-0 mt-4 w-80 bg-white shadow-2xl rounded-3xl border border-slate-100 z-50 py-4">
                    <div className="px-5 pb-3 border-b font-black text-xs text-slate-400 uppercase flex justify-between">
-                     <span>الإشعارات</span>
+                     <span>الإشعارات والطلبات الجديدة</span>
                      <span className="bg-red-100 text-[#f40051] px-2 rounded-full">{allNotifications.length}</span>
                    </div>
                    <div className="max-h-80 overflow-y-auto">
-                     {allNotifications.map((notif, idx) => (
-                       <div key={`${notif.type}-${idx}`} className="p-4 hover:bg-slate-50 cursor-pointer border-b last:border-0" onClick={() => {setActiveTab(notif.type === 'request' ? 'requests' : 'donors'); setShowNotifications(false);}}>
-                         <p className="text-[11px] font-black text-slate-800">{notif.title}</p>
-                         <p className="text-[10px] text-slate-400 font-bold">{notif.sub}</p>
-                       </div>
-                     ))}
+                     {allNotifications.length === 0 ? (
+                       <p className="text-center text-xs text-slate-400 py-6 font-bold">لا توجد إشعارات جديدة</p>
+                     ) : (
+                       allNotifications.map((notif, idx) => (
+                         <div key={`${notif.type}-${idx}`} className="p-4 hover:bg-slate-50 cursor-pointer border-b last:border-0" onClick={() => {setActiveTab(notif.type === 'request' ? 'requests' : 'donors'); setShowNotifications(false);}}>
+                           <p className="text-[11px] font-black text-slate-800">{notif.title}</p>
+                           <p className="text-[10px] text-slate-400 font-bold">{notif.sub}</p>
+                         </div>
+                       ))
+                     )}
                    </div>
                  </div>
                )}
@@ -319,17 +341,19 @@ const Dashboard = ({
             </div>
           )}
 
-          {/* المستشفيات */}
+          {/* المستشفيات (متاحة للجميع، وإضافة مستشفى جديدة للأدمن فقط) */}
           {activeTab === 'hospitals' && (
             <div className="animate-in fade-in duration-500">
               <div className="flex justify-between items-center mb-8">
-                <h3 className="text-2xl font-black text-slate-800">قائمة المستشفيات</h3>
-                <button 
-                  onClick={handleAddHospital}
-                  className="flex items-center gap-2 px-6 py-3.5 bg-[#f40051] text-white rounded-2xl font-black text-xs hover:bg-red-600 transition-all shadow-lg shadow-red-100"
-                >
-                  <FaPlus /> إضافة مستشفى جديد
-                </button>
+                <h3 className="text-2xl font-black text-slate-800">قائمة المستشفيات ومخزون الدم</h3>
+                {isAdmin && (
+                  <button 
+                    onClick={handleAddHospital}
+                    className="flex items-center gap-2 px-6 py-3.5 bg-[#f40051] text-white rounded-2xl font-black text-xs hover:bg-red-600 transition-all shadow-lg shadow-red-100"
+                  >
+                    <FaPlus /> إضافة مستشفى جديد
+                  </button>
+                )}
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {filteredHospitals.map(h => {
@@ -356,6 +380,7 @@ const Dashboard = ({
                           </div>
                         ))}
                       </div>
+                      {/* زر تحديث المخزون متاح للموظف والأدمن */}
                       <button onClick={() => handleUpdateStock(h.id)} className="w-full mt-6 py-4 bg-slate-900 text-white rounded-[1.5rem] font-black text-xs hover:bg-[#f40051] transition-all flex items-center justify-center gap-3 shadow-lg shadow-slate-100"><FaSyncAlt /> تحديث مخزون المستشفى</button>
                     </div>
                   );
@@ -364,21 +389,22 @@ const Dashboard = ({
             </div>
           )}
 
-          {/* المدن */}
+          {/* المدن (متاحة للجميع، وإضافة مدينة جديدة للأدمن فقط) */}
           {activeTab === 'cities' && (
             <div className="animate-in fade-in duration-500">
               <div className="flex justify-between items-center mb-8">
                 <h3 className="text-2xl font-black text-slate-800">قائمة المدن</h3>
-                <button 
-                  onClick={handleAddCity}
-                  className="flex items-center gap-2 px-6 py-3.5 bg-emerald-600 text-white rounded-2xl font-black text-xs hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
-                >
-                  <FaPlus /> إضافة مدينة جديدة
-                </button>
+                {isAdmin && (
+                  <button 
+                    onClick={handleAddCity}
+                    className="flex items-center gap-2 px-6 py-3.5 bg-emerald-600 text-white rounded-2xl font-black text-xs hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
+                  >
+                    <FaPlus /> إضافة مدينة جديدة
+                  </button>
+                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredCities.map(c => {
-                  // حساب عدد المستشفيات التابعة للمدينة بدقة من قائمة المستشفيات الفعلية
                   const hospitalsInCity = hospitals.filter(h => 
                     h.city_id === c.id || h.cityId === c.id || h.city?.id === c.id || h.city_name === c.name || h.city?.name === c.name
                   );

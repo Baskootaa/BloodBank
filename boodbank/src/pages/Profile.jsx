@@ -186,7 +186,7 @@ const Profile = () => {
         <FaUserShield className="text-[#f40051]" /> إعدادات النظام والبروفايل
       </h2>
 
-      {/* قسم تعديل الحسابات والصلاحيات (يظهر للأدمن فقط) */}
+      {/* قسم تعديل الحسابات والصلاحيات (يظهر للأدمن فقط، بينما الموظف والمستخدم العادي تظهر له صفحة البروفايل وتغيير الباسورد فقط) */}
       {isAdmin && (
         <div className="bg-white p-8 rounded-[3rem] border shadow-sm mb-10">
           <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
@@ -294,7 +294,7 @@ const Profile = () => {
         </div>
       )}
 
-      {/* قسم تأمين الحساب الشخصي (تغيير كلمة المرور للحساب الحالي) */}
+      {/* قسم تأمين الحساب الشخصي (تغيير كلمة المرور للحساب الحالي - متاح للجميع) */}
       <div className="bg-white p-10 rounded-[3rem] border shadow-sm">
         <h4 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
           <FaKey className="text-blue-500" /> تغيير كلمة المرور لحسابك الشخصي
