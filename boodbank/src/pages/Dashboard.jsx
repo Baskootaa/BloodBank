@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { 
   FaUsers, FaTint, FaHospital, FaExclamationTriangle, 
-  FaTrash, FaSearch, FaBell, FaCalendarAlt, FaBox, 
+  FaTrash, FaSearch, FaCalendarAlt, FaBox, 
   FaMapMarkerAlt, FaPhoneAlt, FaChevronRight, FaSyncAlt,
   FaCheck, FaTimes, FaCity, FaPlus
 } from 'react-icons/fa';
@@ -15,14 +15,14 @@ const Dashboard = ({
   cities = [], 
   deleteDonor, 
   refreshData,
-  userRole = 'admin' // تحديد الدور (افتراضياً admin أو employee)
+  userRole = '' // استقبال الدور أو جلبه من التخزين المحلي
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showNotifications, setShowNotifications] = useState(false);
 
-  // التحقق مما إذا كان المستخدم الحالي هو الأدمن
-  const isAdmin = userRole === 'admin' || userRole === 'Admin';
+  // التحقق الحقيقي والصارم من صلاحية الأدمن من الـ props أو التخزين المحلي
+  const currentRole = userRole || localStorage.getItem('user_role') || localStorage.getItem('role') || '';
+  const isAdmin = currentRole.trim().toLowerCase() === 'admin';
 
   // حساب إجمالي المخزون الكلي مع دعم كلا الشكلين (blood_stocks أو bloodStocks)
   const totalBagsAllHospitals = useMemo(() => {
@@ -32,25 +32,6 @@ const Dashboard = ({
         return total + hospitalSum;
     }, 0);
   }, [hospitals]);
-
-  // الإشعارات (متبرعين + استغاثات)
-  const pendingDonors = donors.filter(d => d.status === 'pending');
-  const pendingRequests = emergencyRequests.filter(req => req.status === 'pending');
-  
-  const allNotifications = [
-    ...pendingRequests.map(r => ({ 
-      id: r.id, 
-      type: 'request', 
-      title: `استغاثة جديدة: ${r.blood_type}`, 
-      sub: r.name || r.patient_name || "مريض" 
-    })),
-    ...pendingDonors.map(d => ({ 
-      id: d.id, 
-      type: 'donor', 
-      title: `متبرع جديد: ${d.name}`, 
-      sub: `فصيلة ${d.blood_type}` 
-    }))
-  ];
 
   // --- منطق البحث الموحد ---
   const lowerQuery = searchQuery.toLowerCase().trim();
@@ -122,7 +103,7 @@ const Dashboard = ({
   // دالة إضافة مستشفى جديد (للأدمن فقط)
   const handleAddHospital = async () => {
     if (!isAdmin) {
-      Swal.fire('غيرحاصل على صلاحية', 'عذراً، إضافة مستشفى مقتصرة على الأدمن فقط', 'warning');
+      Swal.fire('غير حاصل على صلاحية', 'عذراً، إضافة مستشفى مقتصرة على الأدمن فقط', 'warning');
       return;
     }
     const citiesOptions = cities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -230,7 +211,7 @@ const Dashboard = ({
       </aside>
 
       <div className="flex-grow flex flex-col min-w-0 h-screen overflow-y-auto">
-        {/* Header العام ويحتوي على شريط البحث وجرس الإشعارات الفعال للجميع */}
+        {/* Header العام ويحتوي على شريط البحث فقط بعد نقل الجرس للـ Navbar */}
         <header className="h-24 bg-white/80 backdrop-blur-md flex items-center justify-between px-10 border-b border-slate-100 sticky top-0 z-30">
             <div className="relative w-96">
                <input type="text" placeholder="ابحث عن متبرع، مستشفى، أو استغاثة..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
@@ -238,32 +219,8 @@ const Dashboard = ({
                <FaSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
             
-            {/* جرس الإشعارات العام والفعال للموظف والأدمن */}
-            <div className="relative">
-               <button onClick={() => setShowNotifications(!showNotifications)} className="p-3.5 bg-slate-100 text-slate-500 rounded-2xl relative hover:text-[#f40051] transition-all shadow-sm">
-                 <FaBell />
-                 {allNotifications.length > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-[#f40051] rounded-full border-2 border-white animate-pulse"></span>}
-               </button>
-               {showNotifications && (
-                 <div className="absolute top-full left-0 mt-4 w-80 bg-white shadow-2xl rounded-3xl border border-slate-100 z-50 py-4">
-                   <div className="px-5 pb-3 border-b font-black text-xs text-slate-400 uppercase flex justify-between">
-                     <span>الإشعارات والطلبات الجديدة</span>
-                     <span className="bg-red-100 text-[#f40051] px-2 rounded-full">{allNotifications.length}</span>
-                   </div>
-                   <div className="max-h-80 overflow-y-auto">
-                     {allNotifications.length === 0 ? (
-                       <p className="text-center text-xs text-slate-400 py-6 font-bold">لا توجد إشعارات جديدة</p>
-                     ) : (
-                       allNotifications.map((notif, idx) => (
-                         <div key={`${notif.type}-${idx}`} className="p-4 hover:bg-slate-50 cursor-pointer border-b last:border-0" onClick={() => {setActiveTab(notif.type === 'request' ? 'requests' : 'donors'); setShowNotifications(false);}}>
-                           <p className="text-[11px] font-black text-slate-800">{notif.title}</p>
-                           <p className="text-[10px] text-slate-400 font-bold">{notif.sub}</p>
-                         </div>
-                       ))
-                     )}
-                   </div>
-                 </div>
-               )}
+            <div className="text-xs font-black text-slate-500">
+               <span>مرحباً بك، {localStorage.getItem('user_name') || (isAdmin ? 'مشرف النظام' : 'موظف')}</span>
             </div>
         </header>
 
@@ -341,7 +298,7 @@ const Dashboard = ({
             </div>
           )}
 
-          {/* المستشفيات (متاحة للجميع، وإضافة مستشفى جديدة للأدمن فقط) */}
+          {/* المستشفيات (إضافة مستشفى جديدة للأدمن فقط بناءً على تحقق isAdmin الصارم) */}
           {activeTab === 'hospitals' && (
             <div className="animate-in fade-in duration-500">
               <div className="flex justify-between items-center mb-8">
@@ -389,7 +346,7 @@ const Dashboard = ({
             </div>
           )}
 
-          {/* المدن (متاحة للجميع، وإضافة مدينة جديدة للأدمن فقط) */}
+          {/* المدن (إضافة مدينة جديدة للأدمن فقط بناءً على تحقق isAdmin الصارم) */}
           {activeTab === 'cities' && (
             <div className="animate-in fade-in duration-500">
               <div className="flex justify-between items-center mb-8">
