@@ -67,7 +67,7 @@ const Dashboard = ({
     } catch (e) { Swal.fire('خطأ', 'فشل تحديث حالة المتبرع', 'error'); }
   };
 
-  // دالة تحديث حالة الاستغاثة
+  // دالة تحديث حالة الاستغاثة (المعدلة والمصححة لإرسال البيانات بالصيغة الصحيحة)
   const handleRequestStatus = async (id, status) => {
     try {
       await api.post(`/emergency-requests/${id}/update-status`, { status });
@@ -211,7 +211,7 @@ const Dashboard = ({
       </aside>
 
       <div className="flex-grow flex flex-col min-w-0 h-screen overflow-y-auto">
-        {/* Header العام ويحتوي على شريط البحث فقط بعد نقل الجرس للـ Navbar */}
+        {/* Header العام ويحتوي على شريط البحث فقط */}
         <header className="h-24 bg-white/80 backdrop-blur-md flex items-center justify-between px-10 border-b border-slate-100 sticky top-0 z-30">
             <div className="relative w-96">
                <input type="text" placeholder="ابحث عن متبرع، مستشفى، أو استغاثة..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
@@ -298,7 +298,7 @@ const Dashboard = ({
             </div>
           )}
 
-          {/* المستشفيات (إضافة مستشفى جديدة للأدمن فقط بناءً على تحقق isAdmin الصارم) */}
+          {/* المستشفيات */}
           {activeTab === 'hospitals' && (
             <div className="animate-in fade-in duration-500">
               <div className="flex justify-between items-center mb-8">
@@ -337,7 +337,6 @@ const Dashboard = ({
                           </div>
                         ))}
                       </div>
-                      {/* زر تحديث المخزون متاح للموظف والأدمن */}
                       <button onClick={() => handleUpdateStock(h.id)} className="w-full mt-6 py-4 bg-slate-900 text-white rounded-[1.5rem] font-black text-xs hover:bg-[#f40051] transition-all flex items-center justify-center gap-3 shadow-lg shadow-slate-100"><FaSyncAlt /> تحديث مخزون المستشفى</button>
                     </div>
                   );
@@ -346,7 +345,7 @@ const Dashboard = ({
             </div>
           )}
 
-          {/* المدن (إضافة مدينة جديدة للأدمن فقط بناءً على تحقق isAdmin الصارم) */}
+          {/* المدن */}
           {activeTab === 'cities' && (
             <div className="animate-in fade-in duration-500">
               <div className="flex justify-between items-center mb-8">

@@ -18,7 +18,7 @@ class BloodRequestController extends Controller
     public function index()
     {
         try {
-            $requests = BloodRequest::with(['city', 'hospital'])
+            $requests = BloodRequest::with(['city', 'hospital', 'patient'])
                 ->orderBy('created_at', 'desc')
                 ->get();
             return response()->json($requests, 200);
@@ -92,7 +92,7 @@ class BloodRequestController extends Controller
                 return response()->json([
                     'status'  => 'success',
                     'message' => 'تم تسجيل البيانات في جدول المرضى والطلبات بنجاح',
-                    'data'    => $bloodRequest->load(['city', 'hospital'])
+                    'data'    => $bloodRequest->load(['city', 'hospital', 'patient'])
                 ], 201);
             });
         } catch (\Exception $e) {
@@ -109,12 +109,13 @@ class BloodRequestController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
+        // السماح بمختلف الصيغ القادمة من الـ Frontend (accepted, rejected, approved) لضمان عدم حدوث Validation Error
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:approved,accepted,rejected'
+            'status' => 'required|string|in:approved,accepted,rejected,active,inactive'
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'message' => 'الحالة المطلوبة غير صالحة'], 422);
+            return response()->json(['status' => 'error', 'message' => 'الحالة المطلوبة غير صالحة', 'errors' => $validator->errors()], 422);
         }
         
         $bloodRequest = BloodRequest::findOrFail($id);
@@ -123,7 +124,8 @@ class BloodRequestController extends Controller
             return response()->json(['status' => 'error', 'message' => 'هذا الطلب تمت معالجته مسبقاً.'], 400);
         }
 
-        $newStatus = ($request->status === 'approved' || $request->status === 'accepted') ? 'accepted' : 'rejected';
+        $inputStatus = strtolower(trim($request->status));
+        $newStatus = ($inputStatus === 'approved' || $inputStatus === 'accepted' || $inputStatus === 'active') ? 'accepted' : 'rejected';
 
         try {
             return DB::transaction(function () use ($bloodRequest, $newStatus) {
