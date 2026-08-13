@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Validator;
 class BloodRequestController extends Controller
 {
     /**
-     * عرض جميع طلبات الاستغاثة مرتبة من الأحدث
+     * عرض جميع طلبات الاستغاثة مرتبة من الأحدث مع جلب بيانات المريض
      */
     public function index()
     {
@@ -23,7 +23,7 @@ class BloodRequestController extends Controller
                 ->get();
             return response()->json($requests, 200);
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'حدث خطأ أثناء جلب البيانات'], 500);
+            return response()->json(['status' => 'error', 'message' => 'حدث خطأ أثناء جلب البيانات: ' . $e->getMessage()], 500);
         }
     }
 
@@ -32,7 +32,6 @@ class BloodRequestController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. التحقق من صحة البيانات المدخلة
         $validator = Validator::make($request->all(), [
             'name'          => 'required|string|max:255',
             'blood_type'    => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
@@ -42,11 +41,6 @@ class BloodRequestController extends Controller
             'hospital_id'   => 'required|exists:hospitals,id',
             'bags_quantity' => 'required|integer|min:1|max:20',
             'details'       => 'nullable|string|max:500',
-        ], [
-            'name.required'      => 'اسم المريض مطلوب',
-            'blood_type.in'      => 'فصيلة الدم غير صحيحة',
-            'phone.digits'       => 'رقم الهاتف يجب أن يكون 11 رقم',
-            'hospital_id.exists' => 'المستشفى المختار غير متاح',
         ]);
 
         if ($validator->fails()) {
@@ -62,7 +56,7 @@ class BloodRequestController extends Controller
         try {
             return DB::transaction(function () use ($validated) {
                 
-                // 2. تحديث أو إنشاء سجل المريض (الجدول الأول: patients)
+                // إنشاء أو تحديث بيانات المريض
                 $patient = Patient::updateOrCreate(
                     ['phone' => $validated['phone']],
                     [
@@ -76,7 +70,7 @@ class BloodRequestController extends Controller
                     ]
                 );
 
-                // 3. إنشاء طلب الاستغاثة (الجدول الثاني: blood_requests) - تم استخدام patient_id
+                // إنشاء طلب الاستغاثة وربطه بـ patient_id
                 $bloodRequest = BloodRequest::create([
                     'patient_id'    => $patient->id,
                     'blood_type'    => $validated['blood_type'],
@@ -91,14 +85,14 @@ class BloodRequestController extends Controller
 
                 return response()->json([
                     'status'  => 'success',
-                    'message' => 'تم تسجيل البيانات في جدول المرضى والطلبات بنجاح',
+                    'message' => 'تم تسجيل الاستغاثة بنجاح',
                     'data'    => $bloodRequest->load(['city', 'hospital', 'patient'])
                 ], 201);
             });
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'حدث خطأ أثناء الحفظ في قاعدة البيانات',
+                'message' => 'حدث خطأ أثناء الحفظ',
                 'error'   => $e->getMessage()
             ], 500);
         }
@@ -109,9 +103,8 @@ class BloodRequestController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
-        // السماح بمختلف الصيغ القادمة من الـ Frontend (accepted, rejected, approved) لضمان عدم حدوث Validation Error
         $validator = Validator::make($request->all(), [
-            'status' => 'required|string|in:approved,accepted,rejected,active,inactive'
+            'status' => 'required|string'
         ]);
 
         if ($validator->fails()) {
@@ -119,18 +112,13 @@ class BloodRequestController extends Controller
         }
         
         $bloodRequest = BloodRequest::findOrFail($id);
-        
-        if ($bloodRequest->status !== 'pending') {
-            return response()->json(['status' => 'error', 'message' => 'هذا الطلب تمت معالجته مسبقاً.'], 400);
-        }
-
         $inputStatus = strtolower(trim($request->status));
-        $newStatus = ($inputStatus === 'approved' || $inputStatus === 'accepted' || $inputStatus === 'active') ? 'accepted' : 'rejected';
+        $newStatus = (in_array($inputStatus, ['approved', 'accepted', 'active'])) ? 'accepted' : 'rejected';
 
         try {
             return DB::transaction(function () use ($bloodRequest, $newStatus) {
                 
-                if ($newStatus === 'accepted') {
+                if ($newStatus === 'accepted' && $bloodRequest->status !== 'accepted') {
                     $stock = BloodStock::where('hospital_id', $bloodRequest->hospital_id)
                         ->where('blood_type', $bloodRequest->blood_type)
                         ->lockForUpdate()
@@ -139,20 +127,28 @@ class BloodRequestController extends Controller
                     if (!$stock || $stock->bags_quantity < $bloodRequest->bags_quantity) {
                         return response()->json([
                             'status' => 'error',
-                            'message' => "المخزون غير كافٍ."
+                            'message' => "عذراً، مخزون الدم غير كافٍ في المستشفى."
                         ], 400);
                     }
                     $stock->decrement('bags_quantity', (int) $bloodRequest->bags_quantity);
                 }
 
-                // تحديث جدول الطلبات
+                // تحديث الطلب
                 $bloodRequest->status = $newStatus;
                 $bloodRequest->save();
 
-                // تحديث جدول المرضى برقم الهاتف كمحدد
-                Patient::where('phone', $bloodRequest->phone)->update(['status' => $newStatus]);
+                // تحديث المريض المرتبط برقم الهاتف أو الـ ID
+                if ($bloodRequest->patient_id) {
+                    Patient::where('id', $bloodRequest->patient_id)->update(['status' => $newStatus]);
+                } else {
+                    Patient::where('phone', $bloodRequest->phone)->update(['status' => $newStatus]);
+                }
 
-                return response()->json(['status' => 'success', 'message' => 'تم التحديث في الجدولين بنجاح']);
+                return response()->json([
+                    'status' => 'success', 
+                    'message' => 'تم تحديث حالة الاستغاثة بنجاح',
+                    'data' => $bloodRequest->load(['city', 'hospital', 'patient'])
+                ], 200);
             });
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'فشل التحديث: ' . $e->getMessage()], 500);
