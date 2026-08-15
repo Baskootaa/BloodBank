@@ -42,11 +42,15 @@ const Dashboard = ({
     d.hospital?.name?.toLowerCase().includes(lowerQuery)
   );
 
-  const filteredRequests = emergencyRequests.filter(r => 
-    (r.patient?.name || r.name || r.patient_name)?.toLowerCase().includes(lowerQuery) || 
+  const filteredRequests = emergencyRequests.filter(r => {
+    const patientName = typeof r.patient === 'object' && r.patient !== null 
+      ? (r.patient.name || r.patient.patient_name || "") 
+      : (r.patient || r.name || r.patient_name || "");
+    
+    return patientName.toLowerCase().includes(lowerQuery) || 
     r.hospital?.name?.toLowerCase().includes(lowerQuery) ||
-    r.blood_type?.toLowerCase().includes(lowerQuery)
-  );
+    r.blood_type?.toLowerCase().includes(lowerQuery);
+  });
 
   const filteredHospitals = hospitals.filter(h => 
     h.name?.toLowerCase().includes(lowerQuery) || 
@@ -220,7 +224,7 @@ const Dashboard = ({
             </div>
             
             <div className="text-xs font-black text-slate-500">
-               <span>مرحباً بك، {localStorage.getItem('user_name') || (isAdmin ? 'مشرف النظام' : 'موظف')}</span>
+               <span>مرحباً بك، {String(localStorage.getItem('user_name') || (isAdmin ? 'مشرف النظام' : 'موظف'))}</span>
             </div>
         </header>
 
@@ -241,14 +245,14 @@ const Dashboard = ({
                 <div key={d.id} className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all relative overflow-hidden group">
                   {d.status === 'pending' && <div className="absolute top-0 left-0 bg-yellow-400 text-[8px] font-black px-4 py-1 rounded-br-xl uppercase tracking-tighter text-white">New Donor</div>}
                   <div className="flex justify-between items-start mb-6">
-                    <div className="w-14 h-14 bg-red-50 text-[#f40051] rounded-2xl flex items-center justify-center font-black text-xl shadow-inner">{d.blood_type}</div>
+                    <div className="w-14 h-14 bg-red-50 text-[#f40051] rounded-2xl flex items-center justify-center font-black text-xl shadow-inner">{String(d.blood_type || '')}</div>
                     <button onClick={() => deleteDonor(d.id)} className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all"><FaTrash size={14} /></button>
                   </div>
-                  <h4 className="text-xl font-black text-slate-800 mb-1">{d.name}</h4>
-                  <p className="text-xs text-slate-400 font-bold mb-6">{d.hospital?.name || 'غير محدد'}</p>
+                  <h4 className="text-xl font-black text-slate-800 mb-1">{String(d.name || '')}</h4>
+                  <p className="text-xs text-slate-400 font-bold mb-6">{String(d.hospital?.name || 'غير محدد')}</p>
                   <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaCalendarAlt className="text-[#f40051]"/> العمر: {d.age}</div>
-                    <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaBox className="text-[#f40051]"/> الكمية: {d.bags_quantity || 1}</div>
+                    <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaCalendarAlt className="text-[#f40051]"/> العمر: {String(d.age || '--')}</div>
+                    <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaBox className="text-[#f40051]"/> الكمية: {String(d.bags_quantity || 1)}</div>
                   </div>
                   {d.status === 'pending' ? (
                     <div className="flex gap-2">
@@ -257,7 +261,7 @@ const Dashboard = ({
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                       <a href={`tel:${d.phone}`} className="inline-flex items-center gap-3 px-5 py-2.5 bg-green-50 text-green-600 rounded-2xl font-black text-xs hover:bg-green-600 hover:text-white transition-all border border-green-100 shadow-sm"><FaPhoneAlt size={12} /> {d.phone}</a>
+                       <a href={`tel:${d.phone}`} className="inline-flex items-center gap-3 px-5 py-2.5 bg-green-50 text-green-600 rounded-2xl font-black text-xs hover:bg-green-600 hover:text-white transition-all border border-green-100 shadow-sm"><FaPhoneAlt size={12} /> {String(d.phone || '')}</a>
                        <span className={`text-[9px] font-black px-3 py-1 rounded-full ${d.status === 'accepted' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{d.status === 'accepted' ? 'تم القبول' : 'مرفوض'}</span>
                     </div>
                   )}
@@ -270,24 +274,28 @@ const Dashboard = ({
           {activeTab === 'requests' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-right">
               {filteredRequests.map(req => {
-                // استخراج اسم المريض كـ string نصي تجنباً لخطأ عرض الكائنات Objects مباشرة في الـ JSX
                 const patientName = typeof req.patient === 'object' && req.patient !== null 
-                  ? (req.patient.name || req.patient.patient_name || "مريض غير معروف") 
-                  : (req.patient || req.name || req.patient_name || "مريض غير معروف");
+                  ? String(req.patient.name || req.patient.patient_name || "مريض غير معروف") 
+                  : String(req.patient || req.name || req.patient_name || "مريض غير معروف");
+
+                const hospitalName = typeof req.hospital === 'object' && req.hospital !== null 
+                  ? String(req.hospital.name || "") 
+                  : String(req.hospital || "");
 
                 return (
                   <div key={req.id} className="bg-white p-7 rounded-[3rem] shadow-sm border border-slate-100 relative group overflow-hidden">
                     {req.status === 'pending' && <div className="absolute top-0 left-0 bg-[#f40051] text-[8px] font-black px-4 py-1 rounded-br-xl uppercase tracking-tighter text-white animate-pulse">Urgent Request</div>}
                     <div className="flex justify-between items-start mb-4">
-                      <div className="w-16 h-16 bg-red-50 text-[#f40051] rounded-[1.5rem] flex items-center justify-center font-black text-2xl">{req.blood_type}</div>
+                      <div className="w-16 h-16 bg-red-50 text-[#f40051] rounded-[1.5rem] flex items-center justify-center font-black text-2xl">{String(req.blood_type || '')}</div>
                       <button onClick={() => deleteRequest(req.id)} className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-red-100 shadow-sm"><FaTrash size={14} /></button>
                     </div>
-                    {/* تم التأكد هنا من عرض اسم المريض كنص String بشكل سليم تماماً */}
+                    
                     <h4 className="text-xl font-black text-slate-800">{patientName}</h4>
-                    <p className="text-xs text-slate-400 font-bold mb-6">{req.hospital?.name}</p>
+                    <p className="text-xs text-slate-400 font-bold mb-6">{hospitalName}</p>
+                    
                     <div className="grid grid-cols-2 gap-4 mb-6">
-                      <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaCalendarAlt className="text-[#f40051]"/> العمر: {req.age || '--'}</div>
-                      <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaBox className="text-[#f40051]"/> مطلوب {req.bags_quantity} أكياس</div>
+                      <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaCalendarAlt className="text-[#f40051]"/> العمر: {String(req.age || '--')}</div>
+                      <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaBox className="text-[#f40051]"/> مطلوب {String(req.bags_quantity || 1)} أكياس</div>
                     </div>
                     {req.status === 'pending' ? (
                       <div className="flex gap-2">
@@ -296,7 +304,7 @@ const Dashboard = ({
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
-                         <a href={`tel:${req.phone}`} className="inline-flex items-center gap-3 px-5 py-2.5 bg-green-50 text-green-600 rounded-2xl font-black text-xs hover:bg-green-600 hover:text-white transition-all shadow-sm"><FaPhoneAlt size={12} /> {req.phone}</a>
+                         <a href={`tel:${req.phone}`} className="inline-flex items-center gap-3 px-5 py-2.5 bg-green-50 text-green-600 rounded-2xl font-black text-xs hover:bg-green-600 hover:text-white transition-all shadow-sm"><FaPhoneAlt size={12} /> {String(req.phone || '')}</a>
                          <span className={`text-[9px] font-black px-3 py-1 rounded-full ${req.status === 'accepted' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{req.status === 'accepted' ? 'مقبولة' : 'مرفوضة'}</span>
                       </div>
                     )}
@@ -328,13 +336,15 @@ const Dashboard = ({
                     return stock ? (stock.bags_quantity || stock.quantity || 0) : 0;
                   };
                   const hospitalTotal = stocks.reduce((sum, s) => sum + (Number(s.bags_quantity || s.quantity) || 0), 0);
+                  const cityName = typeof h.city === 'object' && h.city !== null ? String(h.city.name || '') : String(h.city_name || '');
+
                   return (
                     <div key={h.id} className="bg-icon bg-white p-8 rounded-[3.5rem] shadow-sm border border-slate-100 hover:shadow-2xl transition-all group">
                       <div className="flex items-center gap-6 mb-8">
                         <div className="w-20 h-20 bg-[#f40051] text-white rounded-[2rem] flex flex-col items-center justify-center shadow-lg group-hover:scale-105 transition-transform"><span className="text-[10px] font-black opacity-70">TOTAL</span><span className="text-3xl font-black">{hospitalTotal}</span></div>
                         <div>
-                          <h3 className="text-2xl font-black text-slate-800">{h.name}</h3>
-                          <p className="text-slate-400 text-[10px] font-black mt-1 flex items-center gap-2"><FaMapMarkerAlt className="text-[#f40051]"/> {h.city?.name} - {h.address}</p>
+                          <h3 className="text-2xl font-black text-slate-800">{String(h.name || '')}</h3>
+                          <p className="text-slate-400 text-[10px] font-black mt-1 flex items-center gap-2"><FaMapMarkerAlt className="text-[#f40051]"/> {cityName} - {String(h.address || '')}</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-4 gap-3">
@@ -380,8 +390,8 @@ const Dashboard = ({
                         <FaCity />
                       </div>
                       <div>
-                        <h4 className="text-xl font-black text-slate-800">{c.name}</h4>
-                        <p className="text-xs text-slate-400 font-bold mt-1">المستشفيات التابعة: {hospitalsCount}</p>
+                        <h4 className="text-xl font-black text-slate-800">{String(c.name || '')}</h4>
+                        <p className="text-xs text-slate-400 font-bold mt-1">المستشفيات التابعة: {String(hospitalsCount)}</p>
                       </div>
                     </div>
                   );
@@ -399,9 +409,9 @@ const StatCard = ({ title, value, bgColor, icon, onClick }) => (
   <button onClick={onClick} className={`${bgColor} w-full p-8 rounded-[3rem] text-right text-white shadow-xl relative overflow-hidden group hover:-translate-y-2 transition-all duration-500`}>
     <div className="absolute -right-6 -bottom-6 opacity-10 text-9xl group-hover:scale-125 transition-transform duration-700">{icon}</div>
     <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md text-2xl">{icon}</div>
-    <p className="text-white/60 font-black text-xs uppercase tracking-widest">{title}</p>
-    <h3 className="text-4xl font-black mt-2 mb-4 tracking-tighter">{value}</h3>
-    <div className="flex items-center gap-2 text-[10px] font-bold bg-white/10 w-fit px-4 py-2 rounded-full">عرض التفاصيل <FaChevronRight size= {8} /></div>
+    <p className="text-white/60 font-black text-xs uppercase tracking-widest">{String(title || '')}</p>
+    <h3 className="text-4xl font-black mt-2 mb-4 tracking-tighter">{String(value ?? 0)}</h3>
+    <div className="flex items-center gap-2 text-[10px] font-bold bg-white/10 w-fit px-4 py-2 rounded-full">عرض التفاصيل <FaChevronRight size={8} /></div>
   </button>
 );
 

@@ -19,6 +19,9 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
     navigate('/home');
   };
 
+  // تأمين مصفوفة الإشعارات لتجنب أي أخطاء إذا لم تكن مصفوفة
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+
   return (
     <nav className="bg-[#f40051] text-white px-8 py-4 sticky top-0 z-50 shadow-lg font-arabic" dir="rtl">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
@@ -81,9 +84,9 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
                 className="p-2.5 bg-white/10 text-white rounded-full relative hover:bg-white/20 transition-all border border-white/20 shadow-sm flex items-center justify-center"
               >
                 <FaBell size={16} />
-                {notifications.length > 0 && (
+                {safeNotifications.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-yellow-400 text-slate-900 font-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#f40051] shadow-md animate-pulse">
-                    {notifications.length}
+                    {safeNotifications.length}
                   </span>
                 )}
               </button>
@@ -92,13 +95,13 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
                 <div className="absolute top-full left-0 mt-3 w-80 bg-white text-slate-800 shadow-2xl rounded-3xl border border-slate-100 z-50 py-4" dir="rtl">
                   <div className="px-5 pb-3 border-b font-black text-xs text-slate-400 uppercase flex justify-between items-center">
                     <span>الإشعارات والطلبات</span>
-                    <span className="bg-red-100 text-[#f40051] px-2 py-0.5 rounded-full">{notifications.length}</span>
+                    <span className="bg-red-100 text-[#f40051] px-2 py-0.5 rounded-full">{safeNotifications.length}</span>
                   </div>
                   <div className="max-h-80 overflow-y-auto">
-                    {notifications.length === 0 ? (
+                    {safeNotifications.length === 0 ? (
                       <p className="text-center text-xs text-slate-400 py-6 font-bold">لا توجد إشعارات جديدة</p>
                     ) : (
-                      notifications.map((notif, idx) => (
+                      safeNotifications.map((notif, idx) => (
                         <div 
                           key={idx} 
                           className="p-4 hover:bg-slate-50 cursor-pointer border-b last:border-0 transition-colors" 
@@ -107,8 +110,13 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
                             navigate('/dashboard');
                           }}
                         >
-                          <p className="text-[11px] font-black text-slate-800">{notif.title}</p>
-                          <p className="text-[10px] text-slate-400 font-bold mt-0.5">{notif.sub}</p>
+                          {/* تأمين طباعة النصوص داخل الإشعار لمنع أي انهيار بسبب الكائنات */}
+                          <p className="text-[11px] font-black text-slate-800">
+                            {String(notif?.title || 'إشعار جديد')}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                            {String(notif?.sub || '')}
+                          </p>
                         </div>
                       ))
                     )}
@@ -128,7 +136,7 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
             <div className="flex items-center gap-4">
               <div className="hidden sm:block text-[10px] font-black opacity-80 text-right">
                 <p className="leading-none">مرحباً بك</p>
-                <p>{userRole === 'admin' ? 'مسؤول النظام' : userName}</p>
+                <p>{userRole === 'admin' ? 'مسؤول النظام' : String(userName)}</p>
               </div>
               <button 
                 onClick={handleLogout} 
