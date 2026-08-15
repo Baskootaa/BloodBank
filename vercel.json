@@ -7,16 +7,16 @@
   },
   "routes": [
     {
-      "src": "^/manifest\\.json$",
+      "src": "/manifest.json",
       "dest": "/boodbank/dist/manifest.json"
     },
     {
-      "src": "^/sw\\.js$",
+      "src": "/sw.js",
       "dest": "/boodbank/dist/sw.js"
     },
     {
-      "src": "/(css|js|images|favicon.ico)(.*)",
-      "dest": "/public/$1$2"
+      "src": "/(css|js|images|assets|favicon.ico)(.*)",
+      "dest": "/boodbank/dist/$1$2"
     },
     {
       "src": "/(.*)",
