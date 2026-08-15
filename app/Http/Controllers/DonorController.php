@@ -24,13 +24,32 @@ class DonorController extends Controller
         }
     }
 
+    // جلب الإشعارات الخاصة بالمتبرعين المعلقين أو الجدد للـ Navbar
+    public function getNotifications()
+    {
+        try {
+            $donors = Donor::with(['hospital', 'city'])->where('status', 'pending')->latest()->take(5)->get();
+            
+            $notifications = $donors->map(function($donor) {
+                return [
+                    'title' => 'متبرع جديد: ' . $donor->blood_type,
+                    'sub' => ($donor->hospital->name ?? 'مستشفى غير محدد') . ' - ' . ($donor->city->name ?? '')
+                ];
+            });
+
+            return response()->json($notifications, 200);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'حدث خطأ أثناء جلب الإشعارات'], 500);
+        }
+    }
+
     // إضافة متبرع جديد مع Validation قوي
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name'          => 'required|string|max:255',
             'blood_type'    => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-', // تحديد فصائل الدم المسموحة فقط
-            'phone'         => 'required|digits:11', // التأكد من أن الهاتف 11 رقم بالضبط
+            'phone'         => 'required|string', // تم تعديله من digits:11 إلى string ليكون مرناً مع مختلف صيغ الهواتف القادمة من الفرونت إند
             'age'           => 'required|integer|min:18|max:65',
             'city_id'       => 'required|exists:cities,id', 
             'hospital_id'   => 'required|exists:hospitals,id', 
@@ -40,7 +59,6 @@ class DonorController extends Controller
             'name.required'     => 'يرجى إدخال اسم المتبرع',
             'blood_type.in'     => 'فصيلة الدم المختارة غير صحيحة',
             'phone.required'    => 'رقم الهاتف مطلوب',
-            'phone.digits'      => 'رقم الهاتف يجب أن يتكون من 11 رقم (مثل 01234567890)',
             'age.min'           => 'يجب أن يكون عمر المتبرع 18 عاماً على الأقل',
             'age.max'           => 'الحد الأقصى للعمر هو 65 عاماً',
             'city_id.exists'    => 'المدينة المختارة غير موجودة في نظامنا',

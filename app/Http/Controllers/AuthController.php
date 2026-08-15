@@ -16,14 +16,18 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => 'required|string|min:6|confirmed', // تم تعديل الحد الأدنى إلى 6 وإضافة التحقق من التوافق confirmed ليتوافق مع الفرونت إند
             'age' => 'nullable|integer',
             'phone' => 'nullable|string',
             'blood_type' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return response()->json([
+                'status' => false,
+                'message' => 'خطأ في بيانات الإدخال',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
         $user = User::create([
@@ -39,10 +43,12 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
+            'status' => true,
+            'message' => 'تم إنشاء الحساب بنجاح',
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user
-        ]);
+        ], 201);
     }
 
     public function login(Request $request)

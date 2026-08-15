@@ -37,9 +37,9 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
     return name.includes(term) || address.includes(term) || cityName.includes(term);
   });
 
-  // 3. فلترة الاستغاثات
+  // 3. فلترة الاستغاثات (مع دعم العلاقة المرتبطة للبحث بدقة)
   const filteredRequests = bloodRequests.filter(r => {
-    const pName = normalizeArabic(r.name || r.patient_name || r.patientName || "");
+    const pName = normalizeArabic(r.patient?.name || r.name || r.patient_name || r.patientName || "");
     const hName = normalizeArabic(r.hospital_name || r.hospital?.name || "");
     const cityName = normalizeArabic(r.city?.name || r.hospital?.city?.name || "");
     return pName.includes(term) || hName.includes(term) || cityName.includes(term);
@@ -145,8 +145,8 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
                   ))
                 ) : (
                   <div className="col-span-full text-center py-10 text-gray-400 font-bold">لا يوجد نتائج لهذا البحث..</div>
-                )}
-            </div>
+              )}
+          </div>
         )}
 
         {/* قسم المستشفيات */}
@@ -154,7 +154,6 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredHospitals.length > 0 ? (
                     filteredHospitals.map(h => {
-                        // حساب إجمالي أكياس الدم للفحص الدقيق للـ 8 انواع
                         const totalBags = h.bloodStocks 
                           ? h.bloodStocks.reduce((sum, stock) => sum + (Number(stock.bags_quantity) || 0), 0) 
                           : (Number(h.total_bags_count) || 0);
@@ -184,8 +183,8 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
                     })
                 ) : (
                     <div className="col-span-full text-center py-10 text-gray-400 font-bold">لم نجد مستشفيات بهذا الاسم أو العنوان..</div>
-                )}
-            </div>
+              )}
+        </div>
         )}
 
         {/* قسم الاستغاثات */}
@@ -194,8 +193,9 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
                 {filteredRequests.length > 0 ? (
                   filteredRequests.map(r => (
                     <div key={r.id} className="bg-white p-6 rounded-3xl shadow-sm border-2 border-red-50 hover:shadow-md transition-all">
+                        {/* تم التعديل هنا لقراءة اسم المريض من العلاقة المرتبطة بشكل صحيح */}
                         <h3 className="font-black text-gray-800 text-lg mb-1">
-                          الحالة: <span className="text-[#f40051]">{r.name || r.patient_name || r.patientName || "مريض"}</span>
+                          الحالة: <span className="text-[#f40051]">{r.patient?.name || r.name || r.patient_name || r.patientName || "مريض"}</span>
                         </h3>
                         
                         <p className="text-gray-600 text-sm mb-3 font-bold">
@@ -228,7 +228,7 @@ const Home = ({ donors = [], hospitals = [], bloodRequests = [], deleteDonor, is
             </div>
         )}
       </div>
-    </div>
+  </div>
   );
 };
 

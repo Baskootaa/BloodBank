@@ -36,7 +36,7 @@ Route::get('cities', function () {
     return response()->json(City::orderBy('name', 'asc')->get());
 });
 
-// المسار الجديد لإضافة مدينة جديدة (من خلال CityController)
+// المسار لإضافة مدينة جديدة (من خلال CityController)
 Route::post('cities', [CityController::class, 'store']);
 
 Route::get('hospitals', [HospitalController::class, 'index']); 
@@ -95,6 +95,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/users', [AuthController::class, 'index']);
     Route::put('/admin/users/{id}', [AuthController::class, 'updateUser']);
     Route::delete('/admin/users/{id}', [AuthController::class, 'destroy']); // 🗑️ مسار حذف المستخدم بواسطة الأدمن
+
+    // مسار جلب الإشعارات للـ Navbar
+    Route::get('/notifications', [BloodRequestController::class, 'getNotifications']);
 
     // تحديث كلمة المرور
     Route::post('/admin/update-password', function (Request $request) {

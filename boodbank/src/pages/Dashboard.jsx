@@ -43,7 +43,7 @@ const Dashboard = ({
   );
 
   const filteredRequests = emergencyRequests.filter(r => 
-    (r.name || r.patient_name)?.toLowerCase().includes(lowerQuery) || 
+    (r.patient?.name || r.name || r.patient_name)?.toLowerCase().includes(lowerQuery) || 
     r.hospital?.name?.toLowerCase().includes(lowerQuery) ||
     r.blood_type?.toLowerCase().includes(lowerQuery)
   );
@@ -276,7 +276,8 @@ const Dashboard = ({
                     <div className="w-16 h-16 bg-red-50 text-[#f40051] rounded-[1.5rem] flex items-center justify-center font-black text-2xl">{req.blood_type}</div>
                     <button onClick={() => deleteRequest(req.id)} className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-red-100 shadow-sm"><FaTrash size={14} /></button>
                   </div>
-                  <h4 className="text-xl font-black text-slate-800">{req.name || req.patient_name || "مريض غير معروف"}</h4>
+                  {/* تم التعديل هنا لقراءة اسم المريض من العلاقة المرتبطة بشكل صحيح */}
+                  <h4 className="text-xl font-black text-slate-800">{req.patient ? req.patient.name : (req.name || req.patient_name || "مريض غير معروف")}</h4>
                   <p className="text-xs text-slate-400 font-bold mb-6">{req.hospital?.name}</p>
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaCalendarAlt className="text-[#f40051]"/> العمر: {req.age || '--'}</div>

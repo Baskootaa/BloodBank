@@ -14,7 +14,6 @@ const BloodRequest = () => {
 
   const location = useLocation();
 
-  // تم تغيير patient_name إلى name ليطابق الموديل وقاعدة البيانات
   const [formData, setFormData] = useState({ 
     name: '', 
     blood_type: '', 
@@ -54,18 +53,15 @@ const BloodRequest = () => {
   const handlePublish = async (e) => {
     e.preventDefault();
     try {
-      // إرسال البيانات (الآن تشمل bags_quantity و hospital_id بشكل صحيح)
       const response = await api.post('/emergency-requests', formData);
       
       if (response.data.status === 'success') {
         Swal.fire({ icon: 'success', title: 'تم النشر بنجاح', text: 'طلبك الآن قيد المراجعة' });
         setShowForm(false);
-        // إعادة تعيين الفورم بالأسماء الجديدة
         setFormData({ name: '', blood_type: '', hospital_id: '', city_id: '', phone: '', bags_quantity: '', age: '' });
         fetchData();
       }
     } catch (error) { 
-        // عرض رسالة الخطأ القادمة من السيرفر للتأكد من سبب المشكلة
       Swal.fire({ 
         icon: 'error', 
         title: 'خطأ في البيانات', 
@@ -74,10 +70,13 @@ const BloodRequest = () => {
     }
   };
 
-  const filteredRequests = requests.filter((req) =>
-    req.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.blood_type?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRequests = requests.filter((req) => {
+    const patientName = req.patient?.name || req.name || req.patient_name || "";
+    return (
+      patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      req.blood_type?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   const filteredHospitals = hospitals.filter(h => String(h.city_id) === String(formData.city_id));
 
@@ -194,7 +193,10 @@ const BloodRequest = () => {
             <div key={req.id} className="bg-white rounded-[2.5rem] p-8 shadow-sm border-r-8 border-[#f40051] flex flex-col justify-between hover:shadow-xl transition-all h-full group">
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-black text-gray-800 line-clamp-1">{req.name}</h3>
+                  {/* تم التعديل هنا لقراءة اسم المريض من العلاقة المرتبطة بشكل صحيح */}
+                  <h3 className="text-xl font-black text-gray-800 line-clamp-1">
+                    {req.patient?.name || req.name || req.patient_name || 'مريض غير معروف'}
+                  </h3>
                   <div className="w-14 h-14 bg-[#f40051] text-white rounded-2xl flex items-center justify-center flex-shrink-0 font-black text-xl shadow-lg group-hover:scale-110 transition-transform">{req.blood_type}</div>
                 </div>
                 <div className="space-y-4 mb-6">
@@ -228,4 +230,4 @@ const BloodRequest = () => {
   );
 };
 
-export default BloodRequest; 
+export default BloodRequest;

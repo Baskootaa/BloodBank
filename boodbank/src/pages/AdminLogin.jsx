@@ -1,12 +1,22 @@
-import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import api from '../api/axios'; // ✅ استيراد النسخة المركزية المربوطة بالسيرفر المرفوع
+import api from '../api/axios';
 
 const AdminLogin = ({ setIsAuth, isAuth }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
+
+  // استرجاع البريد الإلكتروني المخزن مسبقاً إذا كان المستخدم قد فعل "تذكرني"
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('remembered_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   if (isAuth) return <Navigate to="/dashboard" />;
 
@@ -21,7 +31,6 @@ const AdminLogin = ({ setIsAuth, isAuth }) => {
     localStorage.removeItem('user_email');
 
     try {
-      // ✅ استخدام api.post مباشرة وبمسار نسبي فقط دون الحاجة لكتابة الدومين
       const response = await api.post('/login', {
         email: email.trim(),
         password: password
@@ -38,12 +47,19 @@ const AdminLogin = ({ setIsAuth, isAuth }) => {
         if (token) {
           localStorage.setItem('token', token); 
           localStorage.setItem('isLogged', 'true');
+
+          // التعامل مع خانة "تذكرني"
+          if (rememberMe) {
+            localStorage.setItem('remembered_email', email.trim());
+          } else {
+            localStorage.removeItem('remembered_email');
+          }
           
           if (userData) {
             const fullName = userData.name || (userData.first_name + ' ' + userData.last_name);
             localStorage.setItem('user_name', fullName);
             localStorage.setItem('user_email', userData.email);
-            localStorage.setItem('user_role', userData.role); // ✅ حفظ الدور بوضوح
+            localStorage.setItem('user_role', userData.role);
 
             setIsAuth(true);
             
@@ -59,7 +75,6 @@ const AdminLogin = ({ setIsAuth, isAuth }) => {
             });
           }
           
-          // ✅ تعديل منطق التوجيه ليشمل الأدمن والموظف (employee) لداخل لوحة التحكم أو حسب رغبتك
           if (userData?.role === 'admin' || userData?.role === 'employee') {
             navigate('/dashboard');
           } else {
@@ -108,6 +123,27 @@ const AdminLogin = ({ setIsAuth, isAuth }) => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+          
+          {/* إضافات تذكرني ونسيت كلمة المرور */}
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center space-x-2 space-x-reverse cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 accent-[#f40051] rounded cursor-pointer"
+              />
+              <span className="text-white/80 font-bold">تذكرني</span>
+            </label>
+
+            <Link 
+              to="/forgot-password" 
+              className="text-[#f40051] hover:underline font-bold transition-all"
+            >
+              نسيت كلمة المرور؟
+            </Link>
+          </div>
+
           <button type="submit" className="w-full bg-[#f40051] text-white font-black py-5 rounded-2xl hover:scale-105 transition-all text-xl shadow-lg">
             دخول النظام
           </button>

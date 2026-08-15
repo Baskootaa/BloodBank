@@ -29,19 +29,22 @@ const ScrollToTop = () => {
 };
 
 // الهيكل الرئيسي - يربط الـ Navbar بحالة البحث العامة
-const LayoutWrapper = ({ children, isAuth, setIsAuth, searchTerm, setSearchTerm }) => {
+const LayoutWrapper = ({ children, isAuth, setIsAuth, searchTerm, setSearchTerm, notifications }) => {
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <Navbar 
-        isAuth={isAuth} 
-        setIsAuth={setIsAuth} 
-        searchTerm={searchTerm} 
-        setSearchTerm={setSearchTerm}
-      />
+      {isAuth && (
+        <Navbar 
+          isAuth={isAuth} 
+          setIsAuth={setIsAuth} 
+          searchTerm={searchTerm} 
+          setSearchTerm={setSearchTerm}
+          notifications={notifications}
+        />
+      )}
       <main className="flex-grow">
         {children}
       </main>
-      <Footer />
+      {isAuth && <Footer />}
     </div>
   );
 };
@@ -60,6 +63,9 @@ function App() {
   const [cities, setCities] = useState([]);
   const [hospitals, setHospitals] = useState([]); 
   const [emergencyRequests, setEmergencyRequests] = useState([]);
+  
+  // حالة الإشعارات الخاصة بالـ Navbar
+  const [notifications, setNotifications] = useState([]);
 
   // جلب البيانات من API باستخدام النسخة الموحدة
   const fetchAllData = useCallback(async () => {
@@ -71,13 +77,22 @@ function App() {
         api.get('/emergency-requests')
       ]);
       
-      setDonors(Array.isArray(resDonors.data) ? resDonors.data : (resDonors.data.data || []));
+      const donorsList = Array.isArray(resDonors.data) ? resDonors.data : (resDonors.data.data || []);
+      setDonors(donorsList);
       setCities(Array.isArray(resCities.data) ? resCities.data : (resCities.data.data || []));
       
       const hospitalsData = Array.isArray(resHospitals.data) ? resHospitals.data : (resHospitals.data.data || []);
       setHospitals(hospitalsData);
       
-      setEmergencyRequests(resRequests.data.data || resRequests.data || []);
+      const requestsList = resRequests.data.data || resRequests.data || [];
+      setEmergencyRequests(requestsList);
+      
+      // تحويل الاستغاثات أو الطلبات العاجلة إلى إشعارات لتظهر في الـ Navbar
+      const formattedNotifications = requestsList.map((req) => ({
+        title: `طلب دم: ${req.blood_type || req.bloodType || 'عاجل'}`,
+        sub: req.hospital_name || req.hospital || req.city || 'توجد استغاثة جديدة'
+      }));
+      setNotifications(formattedNotifications);
       
       console.log("Data Sync: OK"); 
     } catch (error) { 
@@ -86,8 +101,10 @@ function App() {
   }, []);
 
   useEffect(() => { 
-    fetchAllData(); 
-  }, [fetchAllData]);
+    if (isAuth) {
+      fetchAllData(); 
+    }
+  }, [fetchAllData, isAuth]);
 
   // دالة إضافة استغاثة
   const addEmergencyRequest = async (formData) => {
@@ -165,18 +182,25 @@ function App() {
         setIsAuth={setIsAuth} 
         searchTerm={searchTerm} 
         setSearchTerm={setSearchTerm}
+        notifications={notifications}
       >
         <Routes>
           <Route path="/" element={
-            <Home donors={donors} hospitals={hospitals} bloodRequests={emergencyRequests} searchTerm={searchTerm} deleteDonor={deleteDonor} isAuth={isAuth} />
+            isAuth ? <Home donors={donors} hospitals={hospitals} bloodRequests={emergencyRequests} searchTerm={searchTerm} deleteDonor={deleteDonor} isAuth={isAuth} /> : <Navigate to="/admin-login" replace />
           } />
           
           <Route path="/home" element={
-            <Home donors={donors} hospitals={hospitals} bloodRequests={emergencyRequests} searchTerm={searchTerm} deleteDonor={deleteDonor} isAuth={isAuth} />
+            isAuth ? <Home donors={donors} hospitals={hospitals} bloodRequests={emergencyRequests} searchTerm={searchTerm} deleteDonor={deleteDonor} isAuth={isAuth} /> : <Navigate to="/admin-login" replace />
           } />
-          <Route path="/blood-request" element={<BloodRequest requests={emergencyRequests} addRequest={addEmergencyRequest} />} />
-          <Route path="/register" element={<Register addDonor={addDonor} cities={cities} />} />
-          <Route path="/contact" element={<Contact />} />
+          <Route path="/blood-request" element={
+            isAuth ? <BloodRequest requests={emergencyRequests} addRequest={addEmergencyRequest} /> : <Navigate to="/admin-login" replace />
+          } />
+          <Route path="/register" element={
+            isAuth ? <Register addDonor={addDonor} cities={cities} /> : <Navigate to="/admin-login" replace />
+          } />
+          <Route path="/contact" element={
+            isAuth ? <Contact /> : <Navigate to="/admin-login" replace />
+          } />
           <Route path="/signup" element={<SignUp handleSignUp={handleUserSignUp} />} />
           <Route path="/admin-login" element={<AdminLogin setIsAuth={setIsAuth} isAuth={isAuth} />} />
           
@@ -201,7 +225,7 @@ function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="*" element={<Navigate to="/home" replace />} />
+          <Route path="*" element={<Navigate to={isAuth ? "/home" : "/admin-login"} replace />} />
         </Routes>
       </LayoutWrapper>
     </Router>

@@ -18,12 +18,36 @@ class BloodRequestController extends Controller
     public function index()
     {
         try {
+            // تم إضافة 'patient' هنا لضمان جلب بيانات جدول patients المرتبط بالطلب
             $requests = BloodRequest::with(['city', 'hospital', 'patient'])
                 ->orderBy('created_at', 'desc')
                 ->get();
             return response()->json($requests, 200);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'حدث خطأ أثناء جلب البيانات: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * جلب الإشعارات الخاصة بطلبات الدم (للـ Navbar)
+     */
+    public function getNotifications()
+    {
+        try {
+            // جلب طلبات الدم المعلقة أو الجديدة كمثال للإشعارات
+            $requests = BloodRequest::with(['hospital', 'city'])->where('status', 'pending')->latest()->take(5)->get();
+            
+            $notifications = $requests->map(function($req) {
+                // فصيلة الدم والمستشفى كعنوان وفرعي للإشعار
+                return [
+                    'title' => 'طلب دم عاجل: ' . $req->blood_type,
+                    'sub' => ($req->hospital->name ?? $req->hospital_name ?? 'مستشفى غير محدد') . ' - ' . ($req->city->name ?? $req->city ?? '')
+                ];
+            });
+
+            return response()->json($notifications, 200);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'حدث خطأ أثناء جلب الإشعارات'], 500);
         }
     }
 
@@ -35,7 +59,7 @@ class BloodRequestController extends Controller
         $validator = Validator::make($request->all(), [
             'name'          => 'required|string|max:255',
             'blood_type'    => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-            'phone'         => 'required|digits:11', 
+            'phone'         => 'required|string', // تم تعديله من digits:11 إلى string ليكون مرناً مع مختلف صيغ الهواتف التي يرسلها الفرونت إند
             'age'           => 'required|integer|min:1|max:100',
             'city_id'       => 'required|exists:cities,id',
             'hospital_id'   => 'required|exists:hospitals,id',
@@ -55,7 +79,7 @@ class BloodRequestController extends Controller
 
         try {
             return DB::transaction(function () use ($validated) {
-                
+
                 // إنشاء سجل جديد تماماً للمريض مع كل طلب استغاثة لضمان تطابق الاسم ورقم الهاتف
                 $patient = Patient::create([
                     'name'          => $validated['name'],
@@ -108,14 +132,14 @@ class BloodRequestController extends Controller
         if ($validator->fails()) {
             return response()->json(['status' => 'error', 'message' => 'الحالة المطلوبة غير صالحة', 'errors' => $validator->errors()], 422);
         }
-        
+
         $bloodRequest = BloodRequest::findOrFail($id);
         $inputStatus = strtolower(trim($request->status));
         $newStatus = (in_array($inputStatus, ['approved', 'accepted', 'active'])) ? 'accepted' : 'rejected';
 
         try {
             return DB::transaction(function () use ($bloodRequest, $newStatus) {
-                
+
                 if ($newStatus === 'accepted' && $bloodRequest->status !== 'accepted') {
                     $stock = BloodStock::where('hospital_id', $bloodRequest->hospital_id)
                         ->where('blood_type', $bloodRequest->blood_type)

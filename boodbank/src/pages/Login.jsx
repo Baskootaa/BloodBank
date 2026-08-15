@@ -1,12 +1,22 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import api from '../api/axios'; // ✅ استبدال axios بالمحرك المركزي المربوط بالـ Production
 
 const Login = ({ setIsAuth }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
+
+  // استرجاع البريد الإلكتروني المخزن مسبقاً إذا كان المستخدم قد فعل "تذكرني"
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('remembered_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,6 +32,14 @@ const Login = ({ setIsAuth }) => {
       if (token) {
         localStorage.setItem('token', token);
         localStorage.setItem('isLogged', 'true');
+
+        // التعامل مع خانة "تذكرني"
+        if (rememberMe) {
+          localStorage.setItem('remembered_email', email.trim());
+        } else {
+          localStorage.removeItem('remembered_email');
+        }
+
         setIsAuth(true);
 
         Swal.fire({ 
@@ -68,6 +86,27 @@ const Login = ({ setIsAuth }) => {
               required
             />
           </div>
+
+          {/* إضافات تذكرني ونسيت كلمة المرور */}
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center space-x-2 space-x-reverse cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 accent-[#f40051] rounded cursor-pointer"
+              />
+              <span className="text-gray-700 font-bold">تذكرني</span>
+            </label>
+
+            <Link 
+              to="/forgot-password" 
+              className="text-[#f40051] hover:underline font-bold transition-all"
+            >
+              نسيت كلمة المرور؟
+            </Link>
+          </div>
+
           <button 
             type="submit" 
             className="w-full py-4 bg-[#f40051] text-white rounded-xl font-black text-lg shadow-lg hover:bg-[#d90048] transition-all"
