@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   FaUsers, FaTint, FaHospital, FaExclamationTriangle, 
   FaTrash, FaSearch, FaCalendarAlt, FaBox, 
@@ -17,8 +18,19 @@ const Dashboard = ({
   refreshData,
   userRole = '' // استقبال الدور أو جلبه من التخزين المحلي
 }) => {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // قراءة الـ URL Parameters لتحديد التبويب (متبرعين أو استغاثات) والعنصر المراد فتحه تلقائياً عند القدوم من الإشعارات
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'requests') {
+      setActiveTab('requests');
+    } else if (tabParam === 'donors') {
+      setActiveTab('donors');
+    }
+  }, [searchParams]);
 
   // التحقق الحقيقي والصارم من صلاحية الأدمن من الـ props أو التخزين المحلي
   const currentRole = userRole || localStorage.getItem('user_role') || localStorage.getItem('role') || '';
@@ -71,7 +83,7 @@ const Dashboard = ({
     } catch (e) { Swal.fire('خطأ', 'فشل تحديث حالة المتبرع', 'error'); }
   };
 
-  // دالة تحديث حالة الاستغاثة (المعدلة والمصححة لإرسال البيانات بالصيغة الصحيحة)
+  // دالة تحديث حالة الاستغاثة
   const handleRequestStatus = async (id, status) => {
     try {
       await api.post(`/emergency-requests/${id}/update-status`, { status });
@@ -181,6 +193,9 @@ const Dashboard = ({
     }
   };
 
+  // التحقق من وجود ID مستهدف في الـ URL لتحديد العنصر المفتوح
+  const targetId = searchParams.get('id');
+
   return (
     <div className="flex bg-[#f8fafc] font-arabic min-h-screen overflow-hidden" dir="rtl">
       {/* Sidebar */}
@@ -241,32 +256,38 @@ const Dashboard = ({
           {/* المتبرعون */}
           {activeTab === 'donors' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-5">
-              {filteredDonors.map(d => (
-                <div key={d.id} className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all relative overflow-hidden group">
-                  {d.status === 'pending' && <div className="absolute top-0 left-0 bg-yellow-400 text-[8px] font-black px-4 py-1 rounded-br-xl uppercase tracking-tighter text-white">New Donor</div>}
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="w-14 h-14 bg-red-50 text-[#f40051] rounded-2xl flex items-center justify-center font-black text-xl shadow-inner">{String(d.blood_type || '')}</div>
-                    <button onClick={() => deleteDonor(d.id)} className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all"><FaTrash size={14} /></button>
-                  </div>
-                  <h4 className="text-xl font-black text-slate-800 mb-1">{String(d.name || '')}</h4>
-                  <p className="text-xs text-slate-400 font-bold mb-6">{String(d.hospital?.name || 'غير محدد')}</p>
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaCalendarAlt className="text-[#f40051]"/> العمر: {String(d.age || '--')}</div>
-                    <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaBox className="text-[#f40051]"/> الكمية: {String(d.bags_quantity || 1)}</div>
-                  </div>
-                  {d.status === 'pending' ? (
-                    <div className="flex gap-2">
-                       <button onClick={() => handleDonorStatus(d.id, 'accepted')} className="flex-grow flex items-center justify-center gap-2 py-3 bg-green-500 text-white rounded-2xl font-black text-[10px] hover:bg-green-600 transition-all shadow-md"><FaCheck /> موافقة</button>
-                       <button onClick={() => handleDonorStatus(d.id, 'rejected')} className="px-5 py-3 bg-slate-100 text-slate-400 rounded-2xl font-black text-[10px] hover:bg-red-500 hover:text-white transition-all"><FaTimes /></button>
+              {filteredDonors.map(d => {
+                const isTarget = String(d.id) === String(targetId);
+                return (
+                  <div 
+                    key={d.id} 
+                    className={`bg-white p-7 rounded-[2.5rem] shadow-sm border transition-all relative overflow-hidden group ${isTarget ? 'border-2 border-[#f40051] shadow-xl ring-4 ring-red-50' : 'border-slate-100'}`}
+                  >
+                    {d.status === 'pending' && <div className="absolute top-0 left-0 bg-yellow-400 text-[8px] font-black px-4 py-1 rounded-br-xl uppercase tracking-tighter text-white">New Donor</div>}
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="w-14 h-14 bg-red-50 text-[#f40051] rounded-2xl flex items-center justify-center font-black text-xl shadow-inner">{String(d.blood_type || '')}</div>
+                      <button onClick={() => deleteDonor(d.id)} className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all"><FaTrash size={14} /></button>
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                       <a href={`tel:${d.phone}`} className="inline-flex items-center gap-3 px-5 py-2.5 bg-green-50 text-green-600 rounded-2xl font-black text-xs hover:bg-green-600 hover:text-white transition-all border border-green-100 shadow-sm"><FaPhoneAlt size={12} /> {String(d.phone || '')}</a>
-                       <span className={`text-[9px] font-black px-3 py-1 rounded-full ${d.status === 'accepted' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{d.status === 'accepted' ? 'تم القبول' : 'مرفوض'}</span>
+                    <h4 className="text-xl font-black text-slate-800 mb-1">{String(d.name || '')}</h4>
+                    <p className="text-xs text-slate-400 font-bold mb-6">{String(d.hospital?.name || 'غير محدد')}</p>
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaCalendarAlt className="text-[#f40051]"/> العمر: {String(d.age || '--')}</div>
+                      <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaBox className="text-[#f40051]"/> الكمية: {String(d.bags_quantity || 1)}</div>
                     </div>
-                  )}
-                </div>
-              ))}
+                    {d.status === 'pending' ? (
+                      <div className="flex gap-2">
+                         <button onClick={() => handleDonorStatus(d.id, 'accepted')} className="flex-grow flex items-center justify-center gap-2 py-3 bg-green-500 text-white rounded-2xl font-black text-[10px] hover:bg-green-600 transition-all shadow-md"><FaCheck /> موافقة</button>
+                         <button onClick={() => handleDonorStatus(d.id, 'rejected')} className="px-5 py-3 bg-slate-100 text-slate-400 rounded-2xl font-black text-[10px] hover:bg-red-500 hover:text-white transition-all"><FaTimes /></button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                         <a href={`tel:${d.phone}`} className="inline-flex items-center gap-3 px-5 py-2.5 bg-green-50 text-green-600 rounded-2xl font-black text-xs hover:bg-green-600 hover:text-white transition-all border border-green-100 shadow-sm"><FaPhoneAlt size={12} /> {String(d.phone || '')}</a>
+                         <span className={`text-[9px] font-black px-3 py-1 rounded-full ${d.status === 'accepted' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{d.status === 'accepted' ? 'تم القبول' : 'مرفوض'}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -282,8 +303,13 @@ const Dashboard = ({
                   ? String(req.hospital.name || "") 
                   : String(req.hospital || "");
 
+                const isTarget = String(req.id) === String(targetId);
+
                 return (
-                  <div key={req.id} className="bg-white p-7 rounded-[3rem] shadow-sm border border-slate-100 relative group overflow-hidden">
+                  <div 
+                    key={req.id} 
+                    className={`bg-white p-7 rounded-[3.5rem] shadow-sm border transition-all relative group overflow-hidden ${isTarget ? 'border-2 border-[#f40051] shadow-xl ring-4 ring-red-50' : 'border-slate-100'}`}
+                  >
                     {req.status === 'pending' && <div className="absolute top-0 left-0 bg-[#f40051] text-[8px] font-black px-4 py-1 rounded-br-xl uppercase tracking-tighter text-white animate-pulse">Urgent Request</div>}
                     <div className="flex justify-between items-start mb-4">
                       <div className="w-16 h-16 bg-red-50 text-[#f40051] rounded-[1.5rem] flex items-center justify-center font-black text-2xl">{String(req.blood_type || '')}</div>

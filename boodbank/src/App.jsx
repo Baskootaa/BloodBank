@@ -50,12 +50,12 @@ const LayoutWrapper = ({ children, isAuth, setIsAuth, searchTerm, setSearchTerm,
 };
 
 function App() {
-  // حالة تسجيل الدخول مع مزامنتها بـ localStorage (تم توحيد الاعتماد على المفتاحين لتجنب أي تضارب)
+  // حالة تسجيل الدخول مع مزامنتها بـ localStorage
   const [isAuth, setIsAuth] = useState(() => {
     return localStorage.getItem('isLogged') === 'true' || localStorage.getItem('isAuth') === 'true';
   });
   
-  // حالة البحث المركزية (تربط الـ Navbar بجميع الصفحات)
+  // حالة البحث المركزية
   const [searchTerm, setSearchTerm] = useState('');
 
   // حالات البيانات
@@ -87,12 +87,28 @@ function App() {
       const requestsList = resRequests.data.data || resRequests.data || [];
       setEmergencyRequests(requestsList);
       
-      // تحويل الاستغاثات أو الطلبات العاجلة إلى إشعارات لتظهر في الـ Navbar
-      const formattedNotifications = requestsList.map((req) => ({
-        title: `طلب دم: ${req.blood_type || req.bloodType || 'عاجل'}`,
-        sub: req.hospital_name || req.hospital || req.city || 'توجد استغاثة جديدة'
-      }));
-      setNotifications(formattedNotifications);
+      // 1. تصفية الاستغاثات غير المقبولة (pending) لتحويلها لإشعارات
+      const pendingRequests = requestsList
+        .filter(req => req.status === 'pending')
+        .map((req) => ({
+          id: req.id,
+          title: `استغاثة دم: ${req.blood_type || 'عاجل'}`,
+          sub: req.hospital_name || (typeof req.hospital === 'object' ? req.hospital?.name : req.hospital) || 'طلب استغاثة جديد',
+          link: `/dashboard?tab=requests&id=${req.id}` // يوجه لتبويب الاستغاثات
+        }));
+
+      // 2. تصفية المتبرعين غير المقبولين (pending) لتحويلها لإشعارات
+      const pendingDonors = donorsList
+        .filter(d => d.status === 'pending')
+        .map((donor) => ({
+          id: donor.id,
+          title: `متبرع جديد: ${donor.blood_type || ''}`,
+          sub: donor.name || 'متبرع ينتظر الموافقة',
+          link: `/dashboard?tab=donors&id=${donor.id}` // يوجه لتبويب المتبرعين
+        }));
+
+      // دمج الإشعارين معاً في قائمة الإشعارات العامة للـ Navbar
+      setNotifications([...pendingRequests, ...pendingDonors]);
       
       console.log("Data Sync: OK"); 
     } catch (error) { 
@@ -167,7 +183,7 @@ function App() {
     }
   };
 
-  // تحديث حالة التخزين المحلي عند تغير حالة الاعتماد (لضمان توافق Profile و ProtectedRoute معاً)
+  // تحديث حالة التخزين المحلي عند تغير حالة الاعتماد
   useEffect(() => { 
     localStorage.setItem('isLogged', isAuth ? 'true' : 'false');
     localStorage.setItem('isAuth', isAuth ? 'true' : 'false');
@@ -204,7 +220,7 @@ function App() {
           <Route path="/signup" element={<SignUp handleSignUp={handleUserSignUp} />} />
           <Route path="/admin-login" element={<AdminLogin setIsAuth={setIsAuth} isAuth={isAuth} />} />
           
-          {/* لوحة التحكم: للأدمن فقط */}
+          {/* لوحة التحكم */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard 
@@ -218,7 +234,7 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* الإعدادات والبروفايل: للأدمن فقط */}
+          {/* الإعدادات والبروفايل */}
           <Route path="/settings" element={
             <ProtectedRoute>
               <Profile />
@@ -232,4 +248,4 @@ function App() {
   );
 }
 
-export default App;
+App.jsx;

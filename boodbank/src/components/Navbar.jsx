@@ -107,7 +107,13 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
                           className="p-4 hover:bg-slate-50 cursor-pointer border-b last:border-0 transition-colors" 
                           onClick={() => {
                             setShowNotifications(false);
-                            navigate('/dashboard');
+                            // التوجيه للداشبورد مع تمرير الـ ID لتحديد الاستغاثة وفتح تبويب الاستغاثات تلقائياً
+                            const targetId = notif?.id || notif?.request_id;
+                            if (targetId) {
+                              navigate(`/dashboard?tab=requests&id=${targetId}`);
+                            } else {
+                              navigate('/dashboard');
+                            }
                           }}
                         >
                           {/* تأمين طباعة النصوص داخل الإشعار لمنع أي انهيار بسبب الكائنات */}
