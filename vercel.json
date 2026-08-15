@@ -7,11 +7,11 @@
   },
   "routes": [
     {
-      "src": "/manifest.json",
+      "src": "^/manifest\\.json$",
       "dest": "/boodbank/dist/manifest.json"
     },
     {
-      "src": "/sw.js",
+      "src": "^/sw\\.js$",
       "dest": "/boodbank/dist/sw.js"
     },
     {
