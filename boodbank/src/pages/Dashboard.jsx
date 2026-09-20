@@ -4,7 +4,7 @@ import {
   FaUsers, FaTint, FaHospital, FaExclamationTriangle, 
   FaTrash, FaSearch, FaCalendarAlt, FaBox, 
   FaMapMarkerAlt, FaPhoneAlt, FaChevronRight, FaSyncAlt,
-  FaCheck, FaTimes, FaCity, FaPlus
+  FaCheck, FaTimes, FaCity, FaPlus, FaClock
 } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import api from '../api/axios'; // ✅ استخدام محرك Axios الموحد
@@ -22,7 +22,7 @@ const Dashboard = ({
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // قراءة الـ URL Parameters لتحديد التبويب (متبرعين أو استغاثات) والعنصر المراد فتحه تلقائياً عند القدوم من الإشعارات
+  // قراءة الـ URL Parameters لتحديد التبويب والعنصر المراد فتحه تلقائياً عند القدوم من الإشعارات
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam === 'requests') {
@@ -73,6 +73,23 @@ const Dashboard = ({
   const filteredCities = cities.filter(c => 
     c.name?.toLowerCase().includes(lowerQuery)
   );
+
+  // دالة تنسيق التاريخ والوقت لشكل مقروء
+  const formatDate = (dateString) => {
+    if (!dateString) return 'غير محدد';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('ar-EG', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   // دالة تحديث حالة المتبرع
   const handleDonorStatus = async (id, status) => {
@@ -230,7 +247,7 @@ const Dashboard = ({
       </aside>
 
       <div className="flex-grow flex flex-col min-w-0 h-screen overflow-y-auto">
-        {/* Header العام ويحتوي على شريط البحث فقط */}
+        {/* Header العام */}
         <header className="h-24 bg-white/80 backdrop-blur-md flex items-center justify-between px-10 border-b border-slate-100 sticky top-0 z-30">
             <div className="relative w-96">
                <input type="text" placeholder="ابحث عن متبرع، مستشفى، أو استغاثة..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
@@ -269,7 +286,13 @@ const Dashboard = ({
                       <button onClick={() => deleteDonor(d.id)} className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all"><FaTrash size={14} /></button>
                     </div>
                     <h4 className="text-xl font-black text-slate-800 mb-1">{String(d.name || '')}</h4>
-                    <p className="text-xs text-slate-400 font-bold mb-6">{String(d.hospital?.name || 'غير محدد')}</p>
+                    <p className="text-xs text-slate-400 font-bold mb-4">{String(d.hospital?.name || 'غير محدد')}</p>
+                    
+                    {/* عرض وقت الإضافة (created_at) */}
+                    <div className="bg-slate-50 px-4 py-2 rounded-xl text-[10px] font-bold text-slate-400 flex items-center gap-2 mb-4">
+                      <FaClock className="text-[#f40051]" /> وقت الإضافة: {formatDate(d.created_at)}
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaCalendarAlt className="text-[#f40051]"/> العمر: {String(d.age || '--')}</div>
                       <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaBox className="text-[#f40051]"/> الكمية: {String(d.bags_quantity || 1)}</div>
@@ -317,7 +340,12 @@ const Dashboard = ({
                     </div>
                     
                     <h4 className="text-xl font-black text-slate-800">{patientName}</h4>
-                    <p className="text-xs text-slate-400 font-bold mb-6">{hospitalName}</p>
+                    <p className="text-xs text-slate-400 font-bold mb-4">{hospitalName}</p>
+
+                    {/* عرض وقت الإضافة (created_at) */}
+                    <div className="bg-slate-50 px-4 py-2 rounded-xl text-[10px] font-bold text-slate-400 flex items-center gap-2 mb-4">
+                      <FaClock className="text-[#f40051]" /> وقت الاستغاثة: {formatDate(req.created_at)}
+                    </div>
                     
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div className="bg-slate-50 p-3 rounded-2xl text-[11px] font-black text-slate-500 flex items-center gap-2"><FaCalendarAlt className="text-[#f40051]"/> العمر: {String(req.age || '--')}</div>
@@ -330,7 +358,7 @@ const Dashboard = ({
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
-                         <a href={`tel:${req.phone}`} className="inline-flex items-center gap-3 px-5 py-2.5 bg-green-50 text-green-600 rounded-2xl font-black text-xs hover:bg-green-600 hover:text-white transition-all shadow-sm"><FaPhoneAlt size={12} /> {String(req.phone || '')}</a>
+                         <a href={`tel:${req.phone}`} className="inline-flex items-center gap-3 px-5 py-2.5 bg-green-50 text-green-600 rounded-2xl font-black text-xs hover:bg-green-600 hover:text-white transition-all border border-green-100 shadow-sm"><FaPhoneAlt size={12} /> {String(req.phone || '')}</a>
                          <span className={`text-[9px] font-black px-3 py-1 rounded-full ${req.status === 'accepted' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{req.status === 'accepted' ? 'مقبولة' : 'مرفوضة'}</span>
                       </div>
                     )}
@@ -346,10 +374,7 @@ const Dashboard = ({
               <div className="flex justify-between items-center mb-8">
                 <h3 className="text-2xl font-black text-slate-800">قائمة المستشفيات ومخزون الدم</h3>
                 {isAdmin && (
-                  <button 
-                    onClick={handleAddHospital}
-                    className="flex items-center gap-2 px-6 py-3.5 bg-[#f40051] text-white rounded-2xl font-black text-xs hover:bg-red-600 transition-all shadow-lg shadow-red-100"
-                  >
+                  <button onClick={handleAddHospital} className="flex items-center gap-2 px-6 py-3.5 bg-[#f40051] text-white rounded-2xl font-black text-xs hover:bg-red-600 transition-all shadow-lg shadow-red-100">
                     <FaPlus /> إضافة مستشفى جديد
                   </button>
                 )}
@@ -395,10 +420,7 @@ const Dashboard = ({
               <div className="flex justify-between items-center mb-8">
                 <h3 className="text-2xl font-black text-slate-800">قائمة المدن</h3>
                 {isAdmin && (
-                  <button 
-                    onClick={handleAddCity}
-                    className="flex items-center gap-2 px-6 py-3.5 bg-emerald-600 text-white rounded-2xl font-black text-xs hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
-                  >
+                  <button onClick={handleAddCity} className="flex items-center gap-2 px-6 py-3.5 bg-emerald-600 text-white rounded-2xl font-black text-xs hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100">
                     <FaPlus /> إضافة مدينة جديدة
                   </button>
                 )}
