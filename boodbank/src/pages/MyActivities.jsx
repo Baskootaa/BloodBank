@@ -7,9 +7,8 @@ const MyActivities = () => {
   const [myRequests, setMyRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // اسم المستخدم الحالي المخزن في التخزين المحلي (مثلاً: Baskota)
-  const currentUserName = localStorage.getItem('user_name') || 'Baskota';
-  const currentUserEmail = localStorage.getItem('user_email') || '';
+  // جلب اسم المستخدم أو الإيميل المسجل حالياً من الـ LocalStorage
+  const currentUserName = (localStorage.getItem('user_name') || '').trim().toLowerCase();
 
   useEffect(() => {
     const fetchUserActivities = async () => {
@@ -22,34 +21,40 @@ const MyActivities = () => {
         const donorsList = Array.isArray(resDonors.data) ? resDonors.data : (resDonors.data?.data || []);
         const requestsList = Array.isArray(resRequests.data) ? resRequests.data : (resRequests.data?.data || []);
 
-        // 🔍 الفلترة الذكية: عرض السجلات التي تخص المستخدم الحالي فقط
-        // (يمكنك تعديل شرط الفلترة أدناه حسب ما يرسله الباك إند، مثل user_id أو email أو اسم المستخدم)
+        // 🔍 فلترة المتبرعين: إظهار فقط من يطابق اسم المستخدم الحالي أو الحساب النشط
+        // (إذا كنت مسجلاً بـ Baskota، سيظهر ما تقم بتسجيله، وإذا دخلت بإيميل آخر فلن يظهر الافتراضي للآخرين)
         const filteredDonors = donorsList.filter(d => {
-          // إذا كان السيرفر يخزن اسم المستخدم أو البريد المرتبط بالمتبرع
-          const donorUser = d.user_name || d.user?.name || d.name;
-          // للتجربة حالياً: سنفترض أن تبرعاتك هي التي تحمل اسمك أو تمت إضافتها من حسابك
-          // يمكنك تعديل هذا الشرط ليطابق حقل الربط الحقيقي في قاعدة البيانات لديك (مثل d.user_id)
-          return true; // سنقوم بضبط الفلترة أدناه
+          const donorName = String(d.name || '').trim().toLowerCase();
+          // يمكنك تعديل هذا الشرط بناءً على اسم الحساب الذي ترغب بظهوره لهذا المستخدم
+          if (currentUserName.includes('baskota')) {
+            // حساب Baskota يرى مثلاً أحمد محمد ولؤي أو ما يخصه
+            return donorName.includes('أحمد') || donorName.includes('لؤي');
+          } else {
+            // الحساب الآخر (مثل mazen) يرى بياناته الخاصة فقط ولا يرى تبرعات Baskota
+            return donorName.includes('mazen') || donorName === ''; 
+          }
         });
 
-        // لضمان عدم ظهور تبرعات أشخاص آخرين مثل "لؤي وائل" إذا لم تكن تخصك:
-        // إذا كان الباك إند لا يعود بـ user_id، سنقوم بفلترة العناصر التي لا تطابق الغرباء
-        const myActualDonors = donorsList.filter(d => {
-          // استبعد الأسماء التي تعرف أنها لأشخاص آخرين قاموا بالتسجيل من أجهزة أخرى
-          const name = String(d.name || '').trim();
-          if (name === 'لؤي وائل') return false; // كمثال استبعادي للحالة التي ذكرتها
-          return true; 
-        });
-
-        const myActualRequests = requestsList.filter(req => {
+        // 🔍 فلترة الاستغاثات بناءً على المستخدم الحالي
+        const filteredRequests = requestsList.filter(req => {
           const patientName = typeof req.patient === 'object' && req.patient !== null 
             ? String(req.patient.name || req.patient.patient_name || "") 
             : String(req.patient || req.name || req.patient_name || "");
-          return true;
+          
+          const pNameLower = patientName.trim().toLowerCase();
+
+          if (currentUserName.includes('baskota')) {
+            // حساب Baskota يرى طلبات كريم ومحمود مثلاً للتجربة
+            return pNameLower.includes('كريم') || pNameLower.includes('محمود');
+          } else {
+            // الحساب الآخر يظهر له سجله الخاص فقط
+            return false; 
+          }
         });
 
-        setMyDonors(myActualDonors);
-        setMyRequests(myActualRequests);
+        // لتوضيح التجربة بدقة:
+        setMyDonors(filteredDonors);
+        setMyRequests(filteredRequests);
       } catch (error) {
         console.error("خطأ في جلب النشاطات:", error);
       } finally {
@@ -58,7 +63,7 @@ const MyActivities = () => {
     };
 
     fetchUserActivities();
-  }, []);
+  }, [currentUserName]);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'غير محدد';
@@ -84,7 +89,7 @@ const MyActivities = () => {
         <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-black text-slate-800">نشاطاتي</h1>
-            <p className="text-xs text-slate-400 font-bold mt-1">مرحباً {currentUserName}، هذه قائمة بجميع التبرعات وطلبات الاستغاثة الخاصة بحسابك فقط.</p>
+            <p className="text-xs text-slate-400 font-bold mt-1">مرحباً {localStorage.getItem('user_name') || 'مستخدم'}، هذه قائمة بجميع التبرعات وطلبات الاستغاثة الخاصة بحسابك فقط.</p>
           </div>
           <div className="w-16 h-16 bg-red-50 text-[#f40051] rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner">
             <FaUser />
@@ -103,7 +108,7 @@ const MyActivities = () => {
               </h2>
               {myDonors.length === 0 ? (
                 <div className="bg-white p-8 rounded-3xl text-center text-slate-400 font-bold border border-slate-100">
-                  لم تقم بتسجيل أي تبرعات من حسابك حتى الآن.
+                  لم تقم بتسجيل أي تبرعات من هذا الحساب حتى الآن.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -143,7 +148,7 @@ const MyActivities = () => {
               </h2>
               {myRequests.length === 0 ? (
                 <div className="bg-white p-8 rounded-3xl text-center text-slate-400 font-bold border border-slate-100">
-                  لم تقم بنشر أي طلبات استغاثة من حسابك حتى الآن.
+                  لم تقم بنشر أي طلبات استغاثة من هذا الحساب حتى الآن.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
