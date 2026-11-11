@@ -20,6 +20,7 @@ import Contact from './pages/Contact';
 import SignUp from './pages/SignUp'; 
 import AdminLogin from './pages/AdminLogin'; 
 import Profile from './pages/Profile'; 
+import MyActivities from './pages/MyActivities'; // ✅ استيراد صفحة نشاطاتي الجديدة
 
 // مكون للتحكم في التمرير لأعلى الصفحة عند تغيير المسار
 const ScrollToTop = () => {
@@ -231,6 +232,13 @@ function App() {
                 deleteDonor={deleteDonor} 
                 refreshData={fetchAllData} 
               />
+            </ProtectedRoute>
+          } />
+
+          {/* صفحة نشاطاتي الشخصية */}
+          <Route path="/my-activities" element={
+            <ProtectedRoute>
+              <MyActivities />
             </ProtectedRoute>
           } />
 

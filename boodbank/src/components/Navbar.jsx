@@ -57,20 +57,26 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
           </Link>
 
           {isAuth && (
-            <div className="flex items-center gap-3">
-              {(userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'employee') && (
-                <Link to="/dashboard" className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-xl hover:bg-white/30 transition-all border border-white/30">
-                  <FaChartLine />
-                  <span>الإحصائيات</span>
-                </Link>
-              )}
-              
-              <Link to="/settings" className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 transition-all border border-white/20">
-                <FaUserShield />
-                <span>الإعدادات</span>
-              </Link>
-            </div>
-          )}
+  <div className="flex items-center gap-3">
+    {/* زر نشاطاتي الجديد */}
+    <Link to="/my-activities" className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 transition-all border border-white/20">
+      <FaUser />
+      <span>نشاطاتي</span>
+    </Link>
+
+    {(userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'employee') && (
+      <Link to="/dashboard" className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-xl hover:bg-white/30 transition-all border border-white/30">
+        <FaChartLine />
+        <span>الإحصائيات</span>
+      </Link>
+    )}
+    
+    <Link to="/settings" className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 transition-all border border-white/20">
+      <FaUserShield />
+      <span>الإعدادات</span>
+    </Link>
+  </div>
+)}
 
           <Link to="/contact" className="hover:text-red-200 transition-colors">اتصل بنا</Link>
         </div>
