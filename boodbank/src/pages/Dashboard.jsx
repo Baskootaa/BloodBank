@@ -24,11 +24,15 @@ const Dashboard = ({
 
   // قراءة الـ URL Parameters لتحديد التبويب والعنصر المراد فتحه تلقائياً عند القدوم من الإشعارات
   useEffect(() => {
-    const tabParam = searchParams.get('tab');
-    if (tabParam === 'requests') {
-      setActiveTab('requests');
-    } else if (tabParam === 'donors') {
-      setActiveTab('donors');
+    try {
+      const tabParam = searchParams.get('tab');
+      if (tabParam === 'requests') {
+        setActiveTab('requests');
+      } else if (tabParam === 'donors') {
+        setActiveTab('donors');
+      }
+    } catch (e) {
+      console.error(e);
     }
   }, [searchParams]);
 
@@ -36,43 +40,61 @@ const Dashboard = ({
   const currentRole = userRole || localStorage.getItem('user_role') || localStorage.getItem('role') || '';
   const isAdmin = currentRole.trim().toLowerCase() === 'admin';
 
+  // حماية المصفوفات من القيم المعدومة لتجنب انهيار الصفحة
+  const safeDonors = Array.isArray(donors) ? donors : [];
+  const safeHospitals = Array.isArray(hospitals) ? hospitals : [];
+  const safeRequests = Array.isArray(emergencyRequests) ? emergencyRequests : [];
+  const safeCities = Array.isArray(cities) ? cities : [];
+
   // حساب إجمالي المخزون الكلي مع دعم كلا الشكلين (blood_stocks أو bloodStocks)
   const totalBagsAllHospitals = useMemo(() => {
-    return hospitals.reduce((total, h) => {
-        const stocks = h.blood_stocks || h.bloodStocks || [];
-        const hospitalSum = stocks.reduce((sum, s) => sum + (Number(s.bags_quantity || s.quantity) || 0), 0);
+    return safeHospitals.reduce((total, h) => {
+        const stocks = h?.blood_stocks || h?.bloodStocks || [];
+        const hospitalSum = stocks.reduce((sum, s) => sum + (Number(s?.bags_quantity || s?.quantity) || 0), 0);
         return total + hospitalSum;
     }, 0);
-  }, [hospitals]);
+  }, [safeHospitals]);
 
   // --- منطق البحث الموحد ---
-  const lowerQuery = searchQuery.toLowerCase().trim();
+  const lowerQuery = searchQuery ? searchQuery.toLowerCase().trim() : '';
 
-  const filteredDonors = donors.filter(d => 
-    d.name?.toLowerCase().includes(lowerQuery) || 
-    d.blood_type?.toLowerCase().includes(lowerQuery) ||
-    d.hospital?.name?.toLowerCase().includes(lowerQuery)
-  );
-
-  const filteredRequests = emergencyRequests.filter(r => {
-    const patientName = typeof r.patient === 'object' && r.patient !== null 
-      ? (r.patient.name || r.patient.patient_name || "") 
-      : (r.patient || r.name || r.patient_name || "");
-    
-    return patientName.toLowerCase().includes(lowerQuery) || 
-    r.hospital?.name?.toLowerCase().includes(lowerQuery) ||
-    r.blood_type?.toLowerCase().includes(lowerQuery);
+  const filteredDonors = safeDonors.filter(d => {
+    if (!d) return false;
+    return (
+      String(d.name || '').toLowerCase().includes(lowerQuery) || 
+      String(d.blood_type || '').toLowerCase().includes(lowerQuery) ||
+      String(d.hospital?.name || '').toLowerCase().includes(lowerQuery)
+    );
   });
 
-  const filteredHospitals = hospitals.filter(h => 
-    h.name?.toLowerCase().includes(lowerQuery) || 
-    h.city?.name?.toLowerCase().includes(lowerQuery) || 
-    h.address?.toLowerCase().includes(lowerQuery)
-  );
+  const filteredRequests = safeRequests.filter(r => {
+    if (!r) return false;
+    const patientName = typeof r.patient === 'object' && r.patient !== null 
+      ? String(r.patient.name || r.patient.patient_name || "") 
+      : String(r.patient || r.name || r.patient_name || "");
+    
+    const hospitalName = typeof r.hospital === 'object' && r.hospital !== null 
+      ? String(r.hospital.name || "") 
+      : String(r.hospital || "");
 
-  const filteredCities = cities.filter(c => 
-    c.name?.toLowerCase().includes(lowerQuery)
-  );
+    return patientName.toLowerCase().includes(lowerQuery) || 
+    hospitalName.toLowerCase().includes(lowerQuery) ||
+    String(r.blood_type || '').toLowerCase().includes(lowerQuery);
+  });
+
+  const filteredHospitals = safeHospitals.filter(h => {
+    if (!h) return false;
+    return (
+      String(h.name || '').toLowerCase().includes(lowerQuery) || 
+      String(h.city?.name || h.city_name || '').toLowerCase().includes(lowerQuery) || 
+      String(h.address || '').toLowerCase().includes(lowerQuery)
+    );
+  });
+
+  const filteredCities = safeCities.filter(c => {
+    if (!c) return false;
+    return String(c.name || '').toLowerCase().includes(lowerQuery);
+  });
 
   // دالة تنسيق التاريخ والوقت لشكل مقروء
   const formatDate = (dateString) => {
@@ -95,7 +117,7 @@ const Dashboard = ({
   const handleDonorStatus = async (id, status) => {
     try {
       await api.post(`/donors/${id}/update-status`, { status });
-      refreshData(); 
+      if (typeof refreshData === 'function') refreshData(); 
       Swal.fire({ title: status === 'accepted' ? 'تم قبول المتبرع' : 'تم الرفض', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (e) { Swal.fire('خطأ', 'فشل تحديث حالة المتبرع', 'error'); }
   };
@@ -104,7 +126,7 @@ const Dashboard = ({
   const handleRequestStatus = async (id, status) => {
     try {
       await api.post(`/emergency-requests/${id}/update-status`, { status });
-      refreshData(); 
+      if (typeof refreshData === 'function') refreshData(); 
       Swal.fire({ title: status === 'accepted' ? 'تم قبول الاستغاثة' : 'تم الرفض', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (e) { Swal.fire('خطأ', 'فشل تحديث حالة الاستغاثة', 'error'); }
   };
@@ -127,7 +149,7 @@ const Dashboard = ({
     if (formValues) {
       try {
         await api.post(`/hospitals/${hospitalId}/update-stock`, formValues);
-        refreshData(); 
+        if (typeof refreshData === 'function') refreshData(); 
         Swal.fire('تم التحديث', 'تم تعديل المخزون بنجاح', 'success');
       } catch (e) { Swal.fire('خطأ', 'فشل تحديث البيانات', 'error'); }
     }
@@ -139,7 +161,7 @@ const Dashboard = ({
       Swal.fire('غير حاصل على صلاحية', 'عذراً، إضافة مستشفى مقتصرة على الأدمن فقط', 'warning');
       return;
     }
-    const citiesOptions = cities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    const citiesOptions = safeCities.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     const { value: formValues } = await Swal.fire({
       title: 'إضافة مستشفى جديد',
       html:
@@ -162,7 +184,7 @@ const Dashboard = ({
     if (formValues) {
       try {
         await api.post('/hospitals', formValues);
-        refreshData();
+        if (typeof refreshData === 'function') refreshData();
         Swal.fire('تم بنجاح', 'تم إضافة المستشفى بنجاح', 'success');
       } catch (e) {
         Swal.fire('خطأ', 'فشل إضافة المستشفى', 'error');
@@ -192,7 +214,7 @@ const Dashboard = ({
     if (cityName) {
       try {
         await api.post('/cities', { name: cityName });
-        refreshData();
+        if (typeof refreshData === 'function') refreshData();
         Swal.fire('تم بنجاح', 'تم إضافة المدينة بنجاح', 'success');
       } catch (e) {
         Swal.fire('خطأ', 'فشل إضافة المدينة', 'error');
@@ -205,7 +227,7 @@ const Dashboard = ({
     if (result.isConfirmed) {
       try {
         await api.delete(`/emergency-requests/${id}`);
-        refreshData();
+        if (typeof refreshData === 'function') refreshData();
       } catch (e) { Swal.fire('خطأ', 'فشل الحذف', 'error'); }
     }
   };
@@ -358,7 +380,7 @@ const Dashboard = ({
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
-                         <a href={`tel:${req.phone}`} className="inline-flex items-center gap-3 px-5 py-2.5 bg-green-50 text-green-600 rounded-2xl font-black text-xs hover:bg-green-600 hover:text-white transition-all border border-green-100 shadow-sm"><FaPhoneAlt size={12} /> {String(req.phone || '')}</a>
+                         <a href={`tel:${req.phone}`} className="inline-flex items-center gap-3 px-5 py-2.5 bg-green-50 text-green-600 rounded-2xl font-black text-xs hover:bg-green-600 hover:text-white transition-all shadow-sm"><FaPhoneAlt size={12} /> {String(req.phone || '')}</a>
                          <span className={`text-[9px] font-black px-3 py-1 rounded-full ${req.status === 'accepted' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{req.status === 'accepted' ? 'مقبولة' : 'مرفوضة'}</span>
                       </div>
                     )}
@@ -395,7 +417,9 @@ const Dashboard = ({
                         <div className="w-20 h-20 bg-[#f40051] text-white rounded-[2rem] flex flex-col items-center justify-center shadow-lg group-hover:scale-105 transition-transform"><span className="text-[10px] font-black opacity-70">TOTAL</span><span className="text-3xl font-black">{hospitalTotal}</span></div>
                         <div>
                           <h3 className="text-2xl font-black text-slate-800">{String(h.name || '')}</h3>
-                          <p className="text-slate-400 text-[10px] font-black mt-1 flex items-center gap-2"><FaMapMarkerAlt className="text-[#f40051]"/> {cityName} - {String(h.address || '')}</p>
+                          <p className="text-slate-400 text-[10px] font-black mt-1 flex items-center gap-2">
+                            <FaMapMarkerAlt className="text-[#f40051]"/> {cityName} {String(h.address || '')}
+                          </p>
                         </div>
                       </div>
                       <div className="grid grid-cols-4 gap-3">
@@ -427,7 +451,7 @@ const Dashboard = ({
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredCities.map(c => {
-                  const hospitalsInCity = hospitals.filter(h => 
+                  const hospitalsInCity = safeHospitals.filter(h => 
                     h.city_id === c.id || h.cityId === c.id || h.city?.id === c.id || h.city_name === c.name || h.city?.name === c.name
                   );
                   const hospitalsCount = c.hospitals_count ?? hospitalsInCity.length;
