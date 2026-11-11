@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaHeartbeat, FaUserPlus, FaChartLine, FaUserShield, FaSearch, FaBell } from 'react-icons/fa';
+import { FaHeartbeat, FaUserPlus, FaChartLine, FaUserShield, FaSearch, FaBell, FaUser } from 'react-icons/fa';
 
 const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = [] }) => {
   const navigate = useNavigate();
@@ -57,25 +57,25 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
           </Link>
 
           {isAuth && (
-  <div className="flex items-center gap-3">
-    <Link to="/my-activities" className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 transition-all border border-white/20">
-      <FaUser />
-      <span>نشاطاتي</span>
-    </Link>
+            <div className="flex items-center gap-3">
+              <Link to="/my-activities" className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 transition-all border border-white/20">
+                <FaUser />
+                <span>نشاطاتي</span>
+              </Link>
 
-    {(userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'employee') && (
-      <Link to="/dashboard" className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-xl hover:bg-white/30 transition-all border border-white/30">
-        <FaChartLine />
-        <span>الإحصائيات</span>
-      </Link>
-    )}
-    
-    <Link to="/settings" className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 transition-all border border-white/20">
-      <FaUserShield />
-      <span>الإعدادات</span>
-    </Link>
-  </div>
-)}
+              {(userRole?.toLowerCase() === 'admin' || userRole?.toLowerCase() === 'employee') && (
+                <Link to="/dashboard" className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-xl hover:bg-white/30 transition-all border border-white/30">
+                  <FaChartLine />
+                  <span>الإحصائيات</span>
+                </Link>
+              )}
+              
+              <Link to="/settings" className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 transition-all border border-white/20">
+                <FaUserShield />
+                <span>الإعدادات</span>
+              </Link>
+            </div>
+          )}
 
           <Link to="/contact" className="hover:text-red-200 transition-colors">اتصل بنا</Link>
         </div>
@@ -112,7 +112,6 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
                           className="p-4 hover:bg-slate-50 cursor-pointer border-b last:border-0 transition-colors" 
                           onClick={() => {
                             setShowNotifications(false);
-                            // التوجيه للداشبورد مع تمرير الـ ID لتحديد الاستغاثة وفتح تبويب الاستغاثات تلقائياً
                             const targetId = notif?.id || notif?.request_id;
                             if (targetId) {
                               navigate(`/dashboard?tab=requests&id=${targetId}`);
@@ -121,7 +120,6 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
                             }
                           }}
                         >
-                          {/* تأمين طباعة النصوص داخل الإشعار لمنع أي انهيار بسبب الكائنات */}
                           <p className="text-[11px] font-black text-slate-800">
                             {String(notif?.title || 'إشعار جديد')}
                           </p>
