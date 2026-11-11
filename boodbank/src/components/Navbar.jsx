@@ -58,7 +58,6 @@ const Navbar = ({ isAuth, setIsAuth, searchTerm, setSearchTerm, notifications = 
 
           {isAuth && (
   <div className="flex items-center gap-3">
-    {/* زر نشاطاتي الجديد */}
     <Link to="/my-activities" className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 transition-all border border-white/20">
       <FaUser />
       <span>نشاطاتي</span>
