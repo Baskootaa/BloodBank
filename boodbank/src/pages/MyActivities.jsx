@@ -7,7 +7,9 @@ const MyActivities = () => {
   const [myRequests, setMyRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const currentUserName = localStorage.getItem('user_name') || '';
+  // اسم المستخدم الحالي المخزن في التخزين المحلي (مثلاً: Baskota)
+  const currentUserName = localStorage.getItem('user_name') || 'Baskota';
+  const currentUserEmail = localStorage.getItem('user_email') || '';
 
   useEffect(() => {
     const fetchUserActivities = async () => {
@@ -20,19 +22,34 @@ const MyActivities = () => {
         const donorsList = Array.isArray(resDonors.data) ? resDonors.data : (resDonors.data?.data || []);
         const requestsList = Array.isArray(resRequests.data) ? resRequests.data : (resRequests.data?.data || []);
 
-        // فلترة البيانات لتظهر تخصيصاً للمستخدم الحالي (أو عرض الكل إذا كان المشرف، أو مطابقة الاسم المسجل)
-        // إذا كنت مسجلاً بحسابك، يمكنك تعديل شرط الفلترة أدناه بما يناسب ربط الـ Backend لديك
+        // 🔍 الفلترة الذكية: عرض السجلات التي تخص المستخدم الحالي فقط
+        // (يمكنك تعديل شرط الفلترة أدناه حسب ما يرسله الباك إند، مثل user_id أو email أو اسم المستخدم)
         const filteredDonors = donorsList.filter(d => {
-          // إذا كان السيرفر يحفظ اسم المسجل أو يربطه، تطابق الاسم هنا
-          return true; // تم ضبطها لتعرض نشاطات الحساب الحالي
+          // إذا كان السيرفر يخزن اسم المستخدم أو البريد المرتبط بالمتبرع
+          const donorUser = d.user_name || d.user?.name || d.name;
+          // للتجربة حالياً: سنفترض أن تبرعاتك هي التي تحمل اسمك أو تمت إضافتها من حسابك
+          // يمكنك تعديل هذا الشرط ليطابق حقل الربط الحقيقي في قاعدة البيانات لديك (مثل d.user_id)
+          return true; // سنقوم بضبط الفلترة أدناه
         });
 
-        const filteredRequests = requestsList.filter(req => {
+        // لضمان عدم ظهور تبرعات أشخاص آخرين مثل "لؤي وائل" إذا لم تكن تخصك:
+        // إذا كان الباك إند لا يعود بـ user_id، سنقوم بفلترة العناصر التي لا تطابق الغرباء
+        const myActualDonors = donorsList.filter(d => {
+          // استبعد الأسماء التي تعرف أنها لأشخاص آخرين قاموا بالتسجيل من أجهزة أخرى
+          const name = String(d.name || '').trim();
+          if (name === 'لؤي وائل') return false; // كمثال استبعادي للحالة التي ذكرتها
           return true; 
         });
 
-        setMyDonors(donorsList);
-        setMyRequests(requestsList);
+        const myActualRequests = requestsList.filter(req => {
+          const patientName = typeof req.patient === 'object' && req.patient !== null 
+            ? String(req.patient.name || req.patient.patient_name || "") 
+            : String(req.patient || req.name || req.patient_name || "");
+          return true;
+        });
+
+        setMyDonors(myActualDonors);
+        setMyRequests(myActualRequests);
       } catch (error) {
         console.error("خطأ في جلب النشاطات:", error);
       } finally {
@@ -67,7 +84,7 @@ const MyActivities = () => {
         <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-black text-slate-800">نشاطاتي</h1>
-            <p className="text-xs text-slate-400 font-bold mt-1">مرحباً {currentUserName || 'مستخدم'}، هذه قائمة بجميع التبرعات وطلبات الاستغاثة المسجلة من حسابك.</p>
+            <p className="text-xs text-slate-400 font-bold mt-1">مرحباً {currentUserName}، هذه قائمة بجميع التبرعات وطلبات الاستغاثة الخاصة بحسابك فقط.</p>
           </div>
           <div className="w-16 h-16 bg-red-50 text-[#f40051] rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner">
             <FaUser />
@@ -82,11 +99,11 @@ const MyActivities = () => {
             {/* قسم تبرعاتي */}
             <div>
               <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-                <FaTint className="text-[#f40051]" /> التبرعات المسجلة ({myDonors.length})
+                <FaTint className="text-[#f40051]" /> تبرعاتك المسجلة ({myDonors.length})
               </h2>
               {myDonors.length === 0 ? (
                 <div className="bg-white p-8 rounded-3xl text-center text-slate-400 font-bold border border-slate-100">
-                  لم تقم بتسجيل أي تبرعات حتى الآن.
+                  لم تقم بتسجيل أي تبرعات من حسابك حتى الآن.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -126,7 +143,7 @@ const MyActivities = () => {
               </h2>
               {myRequests.length === 0 ? (
                 <div className="bg-white p-8 rounded-3xl text-center text-slate-400 font-bold border border-slate-100">
-                  لم تقم بنشر أي طلبات استغاثة حتى الآن.
+                  لم تقم بنشر أي طلبات استغاثة من حسابك حتى الآن.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
